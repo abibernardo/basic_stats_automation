@@ -51,17 +51,25 @@ def manipulacao_de_dados(df):
         nan_count = st.session_state.df[column].isna().sum()
         st.write(f"Há {nan_count} valores faltantes na coluna {column}.")
         if nan_count > 0 and pd.api.types.is_numeric_dtype(st.session_state.df[column]):
-            fillna_modos = {"Substituir por zero", "Substituir pela média"}
+            fillna_modos = {"Excluir linha", "Substituir por zero", "Substituir pela média"}
             fill_na = st.selectbox(
                 'Quer usar qual técnica de preenchimento?',
                 fillna_modos)
             if st.button("Aplicar método de preenchimento"):
+                if fill_na == "Excluir linha":
+                    st.session_state.df = st.session_state.df.dropna(subset=[column])
                 if fill_na == "Substituir por zero":
                     st.session_state.df[column] = st.session_state.df[column].fillna(0)
                 if fill_na == "Substituir pela média":
                     imputer = SimpleImputer(strategy='mean')
                     st.session_state.df[column] = imputer.fit_transform(st.session_state.df[[column]])
                 st.write(f"**Dados faltantes de '{column}' preenchidos com o método '{fill_na}'!**")
+        elif nan_count > 0:
+            st.write(f"**Deseja excluir as colunas com dados faltantes em '{column}'?**")
+            if st.button("Excluir linhas NA"):
+                st.session_state.df = st.session_state.df.dropna(subset=[column])
+                st.write(f"**Linhas com dados faltantes em '{column}' excluídas!**")
+
 
     if tratamento == "Filtragem de dados":
         filtragem = st.selectbox(
@@ -120,7 +128,7 @@ def manipulacao_de_dados(df):
                     st.write("DataFrame original:")
                     st.write(st.session_state.df)
                     filtros_aplicados.clear()
-    st.sidebar.write(f"**Filtros aplicados:** {', '.join(st.session_state.get('filtros_aplicados', []))}")
+
 
 def analise_descritiva(df):
     st.markdown(f"___________________________________________________________________</p>", unsafe_allow_html=True)
@@ -295,9 +303,32 @@ def present_excel(excel_path):
 
     st.sidebar.subheader("Escolha a análise que deseja realizar")
 
-    secs = ["(:", "Manipulação de dados", "Análise descritiva", "Modelo de regressão"]
+    secs = ["Apresentação", "Manipulação de dados", "Análise descritiva", "Modelo de regressão"]
     tickers = secs
     ticker = st.sidebar.selectbox("Seções", tickers)
+
+    if ticker == "Apresentação":
+        st.title("Olá!!!")
+
+        st.markdown("""
+        Esta aplicação foi criada com o propósito de simplificar análises estatísticas básicas, de modo a auxiliar que estudantes/pesquisadores das ciências humanas que não possuem familiaridade com linguagens de programação, possam visualizar seus dados sem terem que recorrer a softwares.
+        """)
+
+        st.header("Orientações:")
+        st.markdown("""
+        Antes de ir para as seções de análises estatísticas, faça o tratamento da sua planilha na seção **"Manipulação de dados"**. Lá, você poderá fazer as devidas alterações para que todas as outras etapas ocorram sem erros. Caso a aplicação dê resultados incoerentes, retorne a essa etapa para verificar aonde está o problema.
+        *Por exemplo: se receber um gráfico que não faça sentido, verifique se sua variável é do tipo adequado no item **"Tipo"**, dentro de **"Manipulação de dados"**.*
+        """)
+
+        st.markdown("""
+        Abaixo, deixo um vídeo-tutorial das funcionalidades da aplicação até o momento.
+        """)
+        youtube_url = 'https://www.youtube.com/watch?v=2b5uvhE3-yw'
+        st.video(youtube_url)
+
+        st.markdown("""
+        Em caso de dúvidas, contate: [bernardoabib1@gmail.com](mailto:bernardoabib1@gmail.com)
+        """)
 
     if ticker == "Manipulação de dados":
         st.title("**Manipulação de dados**")
@@ -319,8 +350,14 @@ resultados_categoricos = {}
 st.title("ESTATÍSTICA BÁSICA SEMI AUTOMATIZADA")
 st.markdown("**Análises estatísticas feitas de forma simples!**")
 
+
 excel_path = st.file_uploader("Escolha um banco de dados para analisar", type=["xlsx", "xls"])
 
 if excel_path is not None:
     present_excel(excel_path)
+if st.session_state.get('filtros_aplicados', []):
+    st.sidebar.write(f"**Filtros aplicados:** {', '.join(st.session_state.get('filtros_aplicados', []))}")
+
+
+
 #streamlit run main.py
