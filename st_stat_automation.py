@@ -29,19 +29,19 @@ def manipulacao_de_dados(df):
         tipo = st.session_state.df[column].dtypes
         st.write(f"**{column} é do tipo {tipo}**")
         st.write(f"Caso o tipo da variável esteja inadequado, para que tipo deseja alterar a coluna {column}?")
-        tipos = ["-", "string", "numerical", "date"]
+        tipos = ["-", "categórica", "numérica", "data"]
         novo_tipo = st.selectbox(
             'Escolha o tipo adequado',
             tipos)
         if st.button("Mudar tipo da variável"):
             try:
-                if novo_tipo == 'string':
+                if novo_tipo == 'categórica':
                     st.session_state.df[column] = st.session_state.df[column].astype(str)
-                elif novo_tipo == 'numerical':
+                elif novo_tipo == 'numérica':
                     st.session_state.df[column] = pd.to_numeric(st.session_state.df[column], errors='raise')
-                elif novo_tipo == 'date':
+                elif novo_tipo == 'data':
                     st.session_state.df[column] = pd.to_datetime(st.session_state.df[column], errors='raise')
-                st.write(f"**Tipo da coluna {column} alterado para {novo_tipo}!**")
+                st.write(f"**Coluna {column} alterada para {novo_tipo}!**")
             except Exception as e:
                 st.write(f"Erro ao tentar alterar o tipo da coluna: {e}")
 
@@ -191,9 +191,8 @@ def analise_descritiva(df):
                         resultados_categoricos[c] = contagem
                         st.write(f"## Análise descritiva da variável {c}")
                         st.write(contagem)
-                        st.write(f'{val_unicos} valores únicos')
-                        st.write(f'Moda = {val_unicos}')
-
+                        st.write(f'Valores únicos: {val_unicos}')
+                        st.write(f'Moda: {moda}')
                         st.bar_chart(contagem)
                     st.write("_____________________________________")
                 except Exception as ex:
@@ -202,8 +201,6 @@ def analise_descritiva(df):
     if visualisar == "Relação entre variáveis":
         colunas_categoricas = df.select_dtypes(include=['object', 'category']).columns.tolist()
         colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
-        #variavel_categorica = st.multiselect('Categoria por boxplot', colunas_categoricas)
-        #variavel_numerica = st.multiselect('Variável de interesse', colunas_numericas)
         st.write("## Análises de variáveis numéricas")
         var_numericas = st.multiselect('Variáveis numéricas de interesse', colunas_numericas)
         if st.button("Visualizar gráficos"):
@@ -248,16 +245,32 @@ def analise_descritiva(df):
             corr = df_numeric.corr()
             fig = px.imshow(corr, text_auto=True, title='Matriz de Correlação')
             st.plotly_chart(fig)
-
         st.write("______________________________________")
         st.write("______________________________________")
+        st.write("## Gráficos de dispersão mais avançados")
 
-        st.write("## Dispersão por cor (legenda selecionável)")
-        cor = st.selectbox('Dividir por cor:', colunas_categoricas)
-        tamanho = st.selectbox('Dividir por tamanho:', colunas_numericas)
+
         x_dc = st.selectbox('Variável X', colunas_numericas)
         y_dc = st.selectbox('Variável Y', colunas_numericas)
-        if st.button("Mostrar gráfico"):
+        cor = st.selectbox('Dividir por cor:', colunas_categoricas)
+        tamanho = st.selectbox('Dividir por tamanho:', colunas_numericas)
+        st.write("______________________________________")
+        if st.button("Mostrar gráficos"):
+            fig = px.scatter(df, x=x_dc, y=y_dc)
+            event = st.plotly_chart(fig, key="simples", on_select="rerun")
+            event
+            st.write("______________________________________")
+            st.write("**Gráfico de dispersão por escala de cor (legenda selecionável)**")
+            fig = px.scatter(
+                df,
+                x=x_dc,
+                y=y_dc,
+                color=cor,
+                color_continuous_scale="reds",
+            )
+            st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+            st.write("______________________________________")
+            st.write("**Scatter dividido por cor e tamanho (legenda selecionável)**")
             fig = px.scatter(
                 df,
                 x=x_dc,
@@ -270,15 +283,6 @@ def analise_descritiva(df):
             event = st.plotly_chart(fig, key="iris", on_select="rerun")
 
             event.selection
-
-
-
-
-# Função para exibir a matriz de correlação
-
-def inferencia(df):
-    column_names = df.columns
-    st.write("____________________________")
 
 def analise_regressao(df):
     st.title("Análise de Regressão Linear")
@@ -371,7 +375,7 @@ def present_excel(excel_path):
         st.markdown("""
         Abaixo, deixo um vídeo-tutorial das funcionalidades da aplicação até o momento.
         """)
-        youtube_url = 'https://www.youtube.com/watch?v=2b5uvhE3-yw'
+        youtube_url = 'https://youtu.be/YRx7nFkqafo'
         st.video(youtube_url)
 
         st.markdown("""
@@ -385,10 +389,6 @@ def present_excel(excel_path):
     if ticker == "Análise descritiva":
         st.title("**Análise descritiva**")
         analise_descritiva(st.session_state.df)
-
-    if ticker == "Inferência":
-        st.title("**Inferência**")
-        inferencia(st.session_state.df)
 
     if ticker == "Modelo de regressão":
         analise_regressao(df)
