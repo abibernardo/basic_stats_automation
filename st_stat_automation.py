@@ -12,6 +12,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from scipy.stats import shapiro
 from statsmodels.stats.diagnostic import het_breuschpagan
+import plotly.figure_factory as ff
 
 def manipulacao_de_dados(df):
     st.data_editor(df)
@@ -132,99 +133,146 @@ def manipulacao_de_dados(df):
 
 def analise_descritiva(df):
     st.markdown(f"___________________________________________________________________</p>", unsafe_allow_html=True)
+    st.dataframe(df, width=900)
     visualisar = st.selectbox(
         'O que quer visualizar?',
         ["-", "Descrição das variáveis", "Relação entre variáveis"])
     column_names = df.columns
+    if 'graph_choices' not in st.session_state:
+        st.session_state.graph_choices = {}
     if visualisar == "Descrição das variáveis":
-        option = st.selectbox(
-            'Qual variável quer analisar?',
-            column_names)
+        option = st.multiselect(
+            'Quais variáveis quer analisar?',
+            column_names, key='unique_key_1')
+        graphs = ["scatter", "histograma", "line", "boxplot"]
+        graph = st.multiselect(
+            f'Que gráficos você deseja usar para variáveis numéricas?',
+            graphs)
+        if st.button("Visualizar"):
+            for idx, c in enumerate(option):
+                try:
+                    st.write("_____________________________________")
+                    if pd.api.types.is_numeric_dtype(df[c]):
+                        media = df[c].mean().round(3)
+                        moda = df[c].mode().values
+                        dp = df[c].std().round(3)
+                        min = df[c].min().round(3)
+                        max = df[c].max().round(3)
+                        assimetria = df[c].skew()
 
-        st.dataframe(df, width=900)
+                        # Calculando os quartis
+                        quartis = df[c].quantile([0.25, 0.5, 0.75]).round(3)
+                        quant_nan = st.session_state.df[c].isna().sum()
+                        st.write(f"## Análise descritiva da variável {c}")
+                        st.write("Média", media)
+                        st.write("Mínimo", min)
+                        st.write("Máximo", max)
+                        st.write("Desvio Padrão", dp)
+                        st.write("1º Quartil", quartis.iloc[0])
+                        st.write("2º Quartil (Mediana)", quartis.iloc[1])
+                        st.write("3º Quartil", quartis.iloc[2])
+                        if quant_nan:
+                            st.write(quant_nan, "dados faltantes")
 
-        if pd.api.types.is_numeric_dtype(df[option]):
-            media = df[option].mean().round(3)
-            moda = df[option].mode().values
-            dp = df[option].std().round(3)
-            min = df[option].min().round(3)
-            max = df[option].max().round(3)
-            # assimetria = df[option].skew()
+                        if "scatter" in graph:
+                            st.scatter_chart(df[c])
+                        if "histograma" in graph:
+                            fig = px.histogram(df, x=c, title=f'Histograma de {c}')
+                            st.plotly_chart(fig)
+                        if "line" in graph:
+                            st.line_chart(df[c])
+                        if "boxplot" in graph:
+                            fig = px.box(df, y=c, title=f'Boxplot de {c}')
+                            st.plotly_chart(fig)
+                    else:
+                        contagem = df[c].value_counts()
+                        val_unicos = df[c].nunique()
+                        moda = df[c].mode().values
+                        resultados_categoricos[c] = contagem
+                        st.write(f"## Análise descritiva da variável {c}")
+                        st.write(contagem)
+                        st.write(f'{val_unicos} valores únicos')
+                        st.write(f'Moda = {val_unicos}')
 
-            # Calculando os quartis
-            quartis = df[option].quantile([0.25, 0.5, 0.75]).round(3)
-            st.write(f"*Análise descritiva da variável {option}*")
-            st.write("Média", media)
-            st.write("Mínimo", min)
-            st.write("Máximo", max)
-            st.write("Desvio Padrão", dp)
-            st.write("1º Quartil", quartis.iloc[0])
-            st.write("2º Quartil (Mediana)", quartis.iloc[1])
-            st.write("3º Quartil", quartis.iloc[2])
-            # st.write("Assimetria", assimetria)
-            graphs = ["scatter", "histograma", "line", "boxplot"]
-            graph = st.selectbox(
-                'Que gráfico você deseja criar?',
-                graphs)
-            if graph == "scatter":
-                st.scatter_chart(df[option])
-            if graph == "histograma":
-                fig = px.histogram(df, x=option, title=f'Histograma de {option}')
-                st.plotly_chart(fig)
-            if graph == "line":
-                st.line_chart(df[option])
-            if graph == "boxplot":
-                fig = px.box(df, y=option, title=f'Boxplot de {option}')
-                st.plotly_chart(fig)
-        else:
-            contagem = df[option].value_counts()
-            resultados_categoricos[option] = contagem
-            st.write(f"Contagem da variável categórica {option}")
-            st.write(contagem)
-            st.bar_chart(contagem)
+                        st.bar_chart(contagem)
+                    st.write("_____________________________________")
+                except Exception as ex:
+                    st.write("Ops, houve algum erro. Verifique a formatação da sua planilha")
 
     if visualisar == "Relação entre variáveis":
-        options = st.multiselect(
-            "Visualizar relação entre que variáveis?",
-            column_names)
-        df = df.loc[:, options]
-        df_filtered = df[options]
-        if st.button("Visualizar gráfico"):
-            if all(df.dtypes.apply(lambda x: pd.api.types.is_numeric_dtype(x))):
-                st.write("**Gráfico de dispersão**")
-                st.scatter_chart(df)
-                fig = sns.pairplot(df)
-                st.write("_____________________________________")
-                st.write("**Pair Plot**")
-                st.pyplot(fig)
-                st.write("_____________________________________")
-                st.write("**Gráfico de linhas**")
-                st.line_chart(df)
-                st.write("______________________________________")
+        colunas_categoricas = df.select_dtypes(include=['object', 'category']).columns.tolist()
+        colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
+        #variavel_categorica = st.multiselect('Categoria por boxplot', colunas_categoricas)
+        #variavel_numerica = st.multiselect('Variável de interesse', colunas_numericas)
+        st.write("## Análises de variáveis numéricas")
+        var_numericas = st.multiselect('Variáveis numéricas de interesse', colunas_numericas)
+        if st.button("Visualizar gráficos"):
+            df = df[var_numericas]
+            st.write("**Gráfico de dispersão**")
+            st.scatter_chart(df)
+            st.write("_____________________________________")
+            st.write("**Histograma**")
+            fig = px.histogram(df)
+            st.plotly_chart(fig)
+            group_labels = df.columns.tolist()  # Obter rótulos das colunas
+            hist_data = [df[col].dropna().tolist() for col in df.columns]
+            fig = ff.create_distplot(
+                hist_data, group_labels, bin_size=[.1, .25, .5])
+            st.plotly_chart(fig)
+            st.write("_____________________________________")
+            st.write("**Pair Plot**")
+            fig = sns.pairplot(df)
+            st.pyplot(fig)
+            st.write("_____________________________________")
+            st.write("**Gráfico de linhas**")
+            st.line_chart(df)
+        st.write("______________________________________")
+        st.write("______________________________________")
 
-            elif all(df.dtypes.apply(lambda x: pd.api.types.is_categorical_dtype(x) or pd.api.types.is_object_dtype(x))):
-                for opt in options:
-                    contagem = df[opt].value_counts()
-                    resultados_categoricos[opt] = contagem
-                    st.bar_chart(contagem)
-            else:
-                colunas_categoricas = df.select_dtypes(include=['object', 'category']).columns.tolist()
-                colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
+        st.write("## Boxplots por categoria")
+        variavel_categorica_boxplot = st.selectbox('Categoria por boxplot', colunas_categoricas)
+        variavel_numerica_boxplot = st.selectbox('Variável de interesse', colunas_numericas)
 
-                # Elementos de interface do Streamlit
-                variavel_categorica = st.selectbox('Categoria por boxplot', colunas_categoricas)
-                variavel_numerica = st.selectbox('Variável de interesse', colunas_numericas)
+        if st.button("Visualizar Boxplots"):
+            fig = px.box(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot, title=f'{variavel_numerica_boxplot} por {variavel_categorica_boxplot}')
+            st.plotly_chart(fig)
 
-                if variavel_categorica and variavel_numerica:
-                    fig = px.box(df, x=variavel_categorica, y=variavel_numerica,
-                                 title=f'{variavel_numerica} por {variavel_categorica}')
-                    st.plotly_chart(fig)
+        st.write("______________________________________")
+        st.write("______________________________________")
 
+        st.write("## Matriz de correlação")
+
+        variaveis_corr = st.multiselect('Matriz de correlação', colunas_numericas)
         if st.button("Matriz de correlação"):
-            df_numeric = df_filtered.select_dtypes(include=['number'])
+            df_numeric = df[variaveis_corr]
             corr = df_numeric.corr()
             fig = px.imshow(corr, text_auto=True, title='Matriz de Correlação')
             st.plotly_chart(fig)
+
+        st.write("______________________________________")
+        st.write("______________________________________")
+
+        st.write("## Dispersão por cor (legenda selecionável)")
+        cor = st.selectbox('Dividir por cor:', colunas_categoricas)
+        tamanho = st.selectbox('Dividir por tamanho:', colunas_numericas)
+        x_dc = st.selectbox('Variável X', colunas_numericas)
+        y_dc = st.selectbox('Variável Y', colunas_numericas)
+        if st.button("Mostrar gráfico"):
+            fig = px.scatter(
+                df,
+                x=x_dc,
+                y=y_dc,
+                color=cor,
+                size=tamanho,
+                hover_data=None,
+            )
+
+            event = st.plotly_chart(fig, key="iris", on_select="rerun")
+
+            event.selection
+
+
+
 
 # Função para exibir a matriz de correlação
 
