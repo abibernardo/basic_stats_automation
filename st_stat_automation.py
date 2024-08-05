@@ -14,6 +14,50 @@ from scipy.stats import shapiro
 from statsmodels.stats.diagnostic import het_breuschpagan
 import plotly.figure_factory as ff
 
+def alterar_tipo(column):
+    tipo = st.session_state.df[column].dtypes
+    st.write(f"**{column} é do tipo {tipo}**")
+    st.write(f"Caso o tipo da variável esteja inadequado, para que tipo deseja alterar a coluna {column}?")
+    tipos = ["-", "categórica", "numérica", "data"]
+    novo_tipo = st.selectbox(
+        'Escolha o tipo adequado',
+        tipos)
+    if st.button("Mudar tipo da variável"):
+        try:
+            if novo_tipo == 'categórica':
+                st.session_state.df[column] = st.session_state.df[column].astype(str)
+            elif novo_tipo == 'numérica':
+                st.session_state.df[column] = pd.to_numeric(st.session_state.df[column], errors='raise')
+            elif novo_tipo == 'data':
+                st.session_state.df[column] = pd.to_datetime(st.session_state.df[column], errors='raise')
+            st.write(f"**Coluna {column} alterada para {novo_tipo}!**")
+        except Exception as e:
+            st.write(f"Erro ao tentar alterar o tipo da coluna: {e}")
+
+def tratar_nan(column):
+    nan_count = st.session_state.df[column].isna().sum()
+    st.write(f"Há {nan_count} valores faltantes na coluna {column}.")
+    if nan_count > 0 and pd.api.types.is_numeric_dtype(st.session_state.df[column]):
+        fillna_modos = {"Excluir linha", "Substituir por zero", "Substituir pela média"}
+        fill_na = st.selectbox(
+            'Quer usar qual técnica de preenchimento?',
+            fillna_modos)
+        if st.button("Aplicar método de preenchimento"):
+            if fill_na == "Excluir linha":
+                st.session_state.df = st.session_state.df.dropna(subset=[column])
+            if fill_na == "Substituir por zero":
+                st.session_state.df[column] = st.session_state.df[column].fillna(0)
+            if fill_na == "Substituir pela média":
+                imputer = SimpleImputer(strategy='mean')
+                st.session_state.df[column] = imputer.fit_transform(st.session_state.df[[column]])
+            st.write(f"**Dados faltantes de '{column}' preenchidos com o método '{fill_na}'!**")
+    elif nan_count > 0:
+        st.write(f"**Deseja excluir as colunas com dados faltantes em '{column}'?**")
+        if st.button("Excluir linhas NA"):
+            st.session_state.df = st.session_state.df.dropna(subset=[column])
+            st.write(f"**Linhas com dados faltantes em '{column}' excluídas!**")
+
+
 def manipulacao_de_dados(df):
     st.data_editor(df)
     column_names = st.session_state.df.columns
@@ -26,51 +70,13 @@ def manipulacao_de_dados(df):
         column = st.selectbox(
             'Quer verificar o tipo de qual coluna?',
             column_names)
-        tipo = st.session_state.df[column].dtypes
-        st.write(f"**{column} é do tipo {tipo}**")
-        st.write(f"Caso o tipo da variável esteja inadequado, para que tipo deseja alterar a coluna {column}?")
-        tipos = ["-", "categórica", "numérica", "data"]
-        novo_tipo = st.selectbox(
-            'Escolha o tipo adequado',
-            tipos)
-        if st.button("Mudar tipo da variável"):
-            try:
-                if novo_tipo == 'categórica':
-                    st.session_state.df[column] = st.session_state.df[column].astype(str)
-                elif novo_tipo == 'numérica':
-                    st.session_state.df[column] = pd.to_numeric(st.session_state.df[column], errors='raise')
-                elif novo_tipo == 'data':
-                    st.session_state.df[column] = pd.to_datetime(st.session_state.df[column], errors='raise')
-                st.write(f"**Coluna {column} alterada para {novo_tipo}!**")
-            except Exception as e:
-                st.write(f"Erro ao tentar alterar o tipo da coluna: {e}")
+        alterar_tipo(column)
 
     if tratamento == "Valores faltantes":
         column = st.selectbox(
             'Quer verificar valores faltantes de qual coluna?',
             column_names)
-        nan_count = st.session_state.df[column].isna().sum()
-        st.write(f"Há {nan_count} valores faltantes na coluna {column}.")
-        if nan_count > 0 and pd.api.types.is_numeric_dtype(st.session_state.df[column]):
-            fillna_modos = {"Excluir linha", "Substituir por zero", "Substituir pela média"}
-            fill_na = st.selectbox(
-                'Quer usar qual técnica de preenchimento?',
-                fillna_modos)
-            if st.button("Aplicar método de preenchimento"):
-                if fill_na == "Excluir linha":
-                    st.session_state.df = st.session_state.df.dropna(subset=[column])
-                if fill_na == "Substituir por zero":
-                    st.session_state.df[column] = st.session_state.df[column].fillna(0)
-                if fill_na == "Substituir pela média":
-                    imputer = SimpleImputer(strategy='mean')
-                    st.session_state.df[column] = imputer.fit_transform(st.session_state.df[[column]])
-                st.write(f"**Dados faltantes de '{column}' preenchidos com o método '{fill_na}'!**")
-        elif nan_count > 0:
-            st.write(f"**Deseja excluir as colunas com dados faltantes em '{column}'?**")
-            if st.button("Excluir linhas NA"):
-                st.session_state.df = st.session_state.df.dropna(subset=[column])
-                st.write(f"**Linhas com dados faltantes em '{column}' excluídas!**")
-
+        tratar_nan(column)
 
     if tratamento == "Filtragem de dados":
         filtragem = st.selectbox(
@@ -90,7 +96,7 @@ def manipulacao_de_dados(df):
                 st.session_state.df = st.session_state.df[st.session_state.df[filtragem].isin(valor_coluna)]
                 st.write(st.session_state.df)
                 st.write(
-                    "Para desativar filtros, selecione a variável filtrada e clique em **'resetar filtro'**")
+                    "Para desativar filtros, clique em **'resetar filtro'**")
                 # Adiciona a variável filtrada na lista de filtros aplicados
                 if filtragem not in filtros_aplicados:
                     filtros_aplicados.append(filtragem)
@@ -114,7 +120,7 @@ def manipulacao_de_dados(df):
                 st.session_state.df = st.session_state.df[st.session_state.df[filtragem].isin(valor_coluna)]
                 st.write(st.session_state.df)
                 st.write(
-                    "Para desativar filtros, selecione a variável filtrada e clique em **'resetar filtro'**")
+                    "Para desativar filtros, clique em **'resetar filtro'**")
                 # Adiciona a variável filtrada na lista de filtros aplicados
                 if filtragem not in filtros_aplicados:
                     filtros_aplicados.append(filtragem)
@@ -130,7 +136,7 @@ def manipulacao_de_dados(df):
                     st.write(st.session_state.df)
                     filtros_aplicados.clear()
 
-
+# @st.fragment
 def analise_descritiva(df):
     st.markdown(f"___________________________________________________________________</p>", unsafe_allow_html=True)
     st.dataframe(df, width=900)
@@ -175,14 +181,22 @@ def analise_descritiva(df):
                             st.write(quant_nan, "dados faltantes")
 
                         if "scatter" in graph:
+                            st.write("_____________________________________")
+                            st.write("**Gráfico de dispersão**")
                             st.scatter_chart(df[c])
                         if "histograma" in graph:
-                            fig = px.histogram(df, x=c, title=f'Histograma de {c}')
+                            st.write("_____________________________________")
+                            st.write("**Histograma**")
+                            fig = px.histogram(df, x=c)
                             st.plotly_chart(fig)
                         if "line" in graph:
+                            st.write("_____________________________________")
+                            st.write("**Gráfico de linha**")
                             st.line_chart(df[c])
                         if "boxplot" in graph:
-                            fig = px.box(df, y=c, title=f'Boxplot de {c}')
+                            st.write("_____________________________________")
+                            st.write("**Boxplot**")
+                            fig = px.box(df, y=c)
                             st.plotly_chart(fig)
                     else:
                         contagem = df[c].value_counts()
@@ -233,13 +247,12 @@ def analise_descritiva(df):
         if st.button("Visualizar Boxplots"):
             fig = px.box(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot, title=f'{variavel_numerica_boxplot} por {variavel_categorica_boxplot}')
             st.plotly_chart(fig)
-
         st.write("______________________________________")
         st.write("______________________________________")
 
         st.write("## Matriz de correlação")
-
         variaveis_corr = st.multiselect('Matriz de correlação', colunas_numericas)
+
         if st.button("Matriz de correlação"):
             df_numeric = df[variaveis_corr]
             corr = df_numeric.corr()
@@ -247,20 +260,21 @@ def analise_descritiva(df):
             st.plotly_chart(fig)
         st.write("______________________________________")
         st.write("______________________________________")
-        st.write("## Gráficos de dispersão mais avançados")
 
+        st.write("## Gráficos de dispersão mais avançados")
 
         x_dc = st.selectbox('Variável X', colunas_numericas)
         y_dc = st.selectbox('Variável Y', colunas_numericas)
-        cor = st.selectbox('Dividir por cor:', colunas_categoricas)
-        tamanho = st.selectbox('Dividir por tamanho:', colunas_numericas)
+        cor = st.selectbox('Variável categórica divisora:', colunas_categoricas)
+        tamanho = st.selectbox('Variável numérica divisora:', colunas_numericas)
         st.write("______________________________________")
         if st.button("Mostrar gráficos"):
+            st.write(f"**{x_dc} x {y_dc}**")
             fig = px.scatter(df, x=x_dc, y=y_dc)
             event = st.plotly_chart(fig, key="simples", on_select="rerun")
             event
             st.write("______________________________________")
-            st.write("**Gráfico de dispersão por escala de cor (legenda selecionável)**")
+            st.write(f"**{x_dc} x {y_dc} dividido por {cor} (legenda selecionável)**")
             fig = px.scatter(
                 df,
                 x=x_dc,
@@ -270,7 +284,17 @@ def analise_descritiva(df):
             )
             st.plotly_chart(fig, theme="streamlit", use_container_width=True)
             st.write("______________________________________")
-            st.write("**Scatter dividido por cor e tamanho (legenda selecionável)**")
+            st.write(f"**{x_dc} x {y_dc} por escala de cor em {tamanho}**")
+            fig = px.scatter(
+                df,
+                x=x_dc,
+                y=y_dc,
+                color=tamanho,
+                color_continuous_scale="reds",
+            )
+            st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+            st.write("______________________________________")
+            st.write(f"**{x_dc} x {y_dc} dividido por {cor} e {tamanho} (legenda selecionável)**")
             fig = px.scatter(
                 df,
                 x=x_dc,
@@ -284,38 +308,55 @@ def analise_descritiva(df):
 
             event.selection
 
+
+
 def analise_regressao(df):
     st.title("Análise de Regressão Linear")
-    column_names = df.columns
-    colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
+    column_names = st.session_state.df.columns
+    colunas_numericas = st.session_state.df.select_dtypes(include=[np.number]).columns.tolist()
     #colunas_categoricas = df.select_dtypes(include=[object]).columns.tolist()
     y_col = st.selectbox('Selecione a variável resposta (Y)', colunas_numericas)
     X_col = st.multiselect('Selecione os preditores (X)', column_names)
 
     if st.button("Executar Regressão Linear"):
         if y_col and X_col:
-            X = df[X_col]
+            X = st.session_state.df[X_col]
             colunas_categoricas = X.select_dtypes(include=[object]).columns.tolist()
             X = pd.get_dummies(X, columns=colunas_categoricas, drop_first=True)
             X = sm.add_constant(X)
 
-            y = df[y_col]
+            y = st.session_state.df[y_col]
 
 
-            #modelo = sm.OLS(y, X).fit()
             modelo = sm.OLS(y, X.astype(float)).fit()
 
-            st.write(modelo.summary())
+            stats_dict = {
+                'Preditor': modelo.params.index,
+                'Coeficiente': modelo.params.round(4).values,
+                'P-valor': modelo.pvalues.round(4).values,
+                'Erro padrão': modelo.bse.round(4).values
+            }
+            stats_df = pd.DataFrame(stats_dict)
+
+
+            st.write("**Resultados do modelo**")
+            st.table(stats_df)
+            st.write("_______________")
+            st.write("Coeficiente de determinação", round(modelo.rsquared_adj, 4))
+            st.write("Coeficiente de determinação ajustado", round(modelo.rsquared_adj, 4))
+
+
 
             # Visualização da regressão
             for col in X_col:
-                if pd.api.types.is_numeric_dtype(df[col]):
+                if pd.api.types.is_numeric_dtype(st.session_state.df[col]):
                     fig = px.scatter(df, x=col, y=y_col, trendline='ols', title=f'{col} vs {y_col}')
                     st.plotly_chart(fig)
 
             # Gráfico de resíduos
             st.write("**Atenção: modelos de regressão só são úteis se cumprirem pressupostos estatísticos que validam os seus resultados. Por isso, recomenda-se fortemente sempre analisar os resíduos do seu modelo.**")
-
+            st.write("______________________________________")
+            st.write("## Análise de resíduos")
             residuos = modelo.resid
             # Grafico residuos
             fig_residuos = go.Figure()
@@ -327,7 +368,7 @@ def analise_regressao(df):
             # Teste de Normalidade dos Resíduos (Shapiro-Wilk)
             shapiro_test = shapiro(residuos)
             st.write("**Teste de Normalidade dos Resíduos (Shapiro-Wilk)**")
-            st.write(f"Estatística W: {shapiro_test.statistic:.4f}, p-valor: {shapiro_test.pvalue:.4f}")
+            st.write(f"Estatística W: **{shapiro_test.statistic:.4f}**, p-valor: **{shapiro_test.pvalue:.4f}**")
             fig_qq = sm.qqplot(residuos, line='45')
             #st.write("**QQ Plot**")
             #st.pyplot(fig_qq)
@@ -339,7 +380,7 @@ def analise_regressao(df):
             # Teste de Homocedasticidade (Breusch-Pagan)
             _, bp_pvalue, _, _ = het_breuschpagan(residuos, X)
             st.write("**Teste de Homocedasticidade (Breusch-Pagan)**")
-            st.write(f"p-valor: {bp_pvalue:.4f}")
+            st.write(f"p-valor: **{bp_pvalue:.4f}**")
             if bp_pvalue < 0.06:
                 st.write("Há indícios de heterocedasticidade no resíduo **(!)**")
             else:
