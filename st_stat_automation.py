@@ -14,6 +14,7 @@ from scipy.stats import shapiro
 from statsmodels.stats.diagnostic import het_breuschpagan
 import plotly.figure_factory as ff
 
+
 def alterar_tipo(column):
     tipo = st.session_state.df[column].dtypes
     st.write(f"**{column} é do tipo {tipo}**")
@@ -333,17 +334,17 @@ def analise_regressao(df):
             stats_dict = {
                 'Preditor': modelo.params.index,
                 'Coeficiente': modelo.params.round(4).values,
-                'P-valor': modelo.pvalues.round(4).values,
-                'Erro padrão': modelo.bse.round(4).values
+                'Std Error': modelo.bse.round(4).values,
+                'T-valor': modelo.tvalues.round(4).values,
+                'P(>|t|)': modelo.pvalues.round(4).values
             }
             stats_df = pd.DataFrame(stats_dict)
 
 
-            st.write("**Resultados do modelo**")
+            st.write("## Resultados do modelo")
             st.table(stats_df)
             st.write("_______________")
-            st.write("Coeficiente de determinação", round(modelo.rsquared_adj, 4))
-            st.write("Coeficiente de determinação ajustado", round(modelo.rsquared_adj, 4))
+            st.write(f"### Coeficiente de determinação", round(modelo.rsquared_adj, 4))
 
 
 
@@ -352,22 +353,23 @@ def analise_regressao(df):
                 if pd.api.types.is_numeric_dtype(st.session_state.df[col]):
                     fig = px.scatter(df, x=col, y=y_col, trendline='ols', title=f'{col} vs {y_col}')
                     st.plotly_chart(fig)
+                    st.write("______________________________________")
 
             # Gráfico de resíduos
             st.write("**Atenção: modelos de regressão só são úteis se cumprirem pressupostos estatísticos que validam os seus resultados. Por isso, recomenda-se fortemente sempre analisar os resíduos do seu modelo.**")
             st.write("______________________________________")
-            st.write("## Análise de resíduos")
+            st.write("# Análise de resíduos")
             residuos = modelo.resid
             # Grafico residuos
             fig_residuos = go.Figure()
             fig_residuos.add_trace(go.Scatter(x=modelo.fittedvalues, y=residuos, mode='markers'))
             fig_residuos.add_trace(go.Scatter(x=modelo.fittedvalues, y=[0] * len(residuos), mode='lines'))
-            fig_residuos.update_layout(title="Gráfico de Resíduos", xaxis_title="Valores Ajustados",
+            fig_residuos.update_layout(title=" ", xaxis_title="Valores Ajustados",
                                        yaxis_title="Resíduos")
             st.plotly_chart(fig_residuos)
             # Teste de Normalidade dos Resíduos (Shapiro-Wilk)
             shapiro_test = shapiro(residuos)
-            st.write("**Teste de Normalidade dos Resíduos (Shapiro-Wilk)**")
+            st.write("### Teste de Normalidade dos Resíduos (Shapiro-Wilk)")
             st.write(f"Estatística W: **{shapiro_test.statistic:.4f}**, p-valor: **{shapiro_test.pvalue:.4f}**")
             fig_qq = sm.qqplot(residuos, line='45')
             #st.write("**QQ Plot**")
@@ -379,7 +381,7 @@ def analise_regressao(df):
 
             # Teste de Homocedasticidade (Breusch-Pagan)
             _, bp_pvalue, _, _ = het_breuschpagan(residuos, X)
-            st.write("**Teste de Homocedasticidade (Breusch-Pagan)**")
+            st.write("### Teste de Homocedasticidade (Breusch-Pagan)")
             st.write(f"p-valor: **{bp_pvalue:.4f}**")
             if bp_pvalue < 0.06:
                 st.write("Há indícios de heterocedasticidade no resíduo **(!)**")
