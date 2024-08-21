@@ -141,19 +141,26 @@ def manipulacao_de_dados(df):
 def analise_descritiva(df):
     st.markdown(f"___________________________________________________________________</p>", unsafe_allow_html=True)
     st.dataframe(df, width=900)
-    visualisar = st.selectbox(
-        'O que quer visualizar?',
-        ["-", "Descrição das variáveis", "Relação entre variáveis"])
+    visualisar = st.radio(
+        "O que quer visualizar?",
+        ["Descrição das variáveis", "Relação entre variáveis"],
+        captions=[
+            "Medidas estatísticas e distribuição",
+            "Gráficos relacionando variáveis",
+        ],
+    )
+    st.write("_____________________________________")
+
     column_names = df.columns
     if 'graph_choices' not in st.session_state:
         st.session_state.graph_choices = {}
     if visualisar == "Descrição das variáveis":
         option = st.multiselect(
-            'Quais variáveis quer analisar?',
+            '**Quais variáveis quer analisar?**',
             column_names, key='unique_key_1')
-        graphs = ["scatter", "histograma", "line", "boxplot"]
+        graphs = ["dispersão", "histograma", "linha", "boxplot"]
         graph = st.multiselect(
-            f'Que gráficos você deseja usar para variáveis numéricas?',
+            f'**Que gráficos você deseja usar para variáveis numéricas?**',
             graphs)
         if st.button("Visualizar"):
             for idx, c in enumerate(option):
@@ -181,7 +188,7 @@ def analise_descritiva(df):
                         if quant_nan:
                             st.write(quant_nan, "dados faltantes")
 
-                        if "scatter" in graph:
+                        if "dispersão" in graph:
                             st.write("_____________________________________")
                             st.write("**Gráfico de dispersão**")
                             st.scatter_chart(df[c])
@@ -190,7 +197,7 @@ def analise_descritiva(df):
                             st.write("**Histograma**")
                             fig = px.histogram(df, x=c)
                             st.plotly_chart(fig)
-                        if "line" in graph:
+                        if "linha" in graph:
                             st.write("_____________________________________")
                             st.write("**Gráfico de linha**")
                             st.line_chart(df[c])
@@ -232,10 +239,6 @@ def analise_descritiva(df):
                 hist_data, group_labels, bin_size=[.1, .25, .5])
             st.plotly_chart(fig)
             st.write("_____________________________________")
-            st.write("**Pair Plot**")
-            fig = sns.pairplot(df)
-            st.pyplot(fig)
-            st.write("_____________________________________")
             st.write("**Gráfico de linhas**")
             st.line_chart(df)
         st.write("______________________________________")
@@ -259,6 +262,10 @@ def analise_descritiva(df):
             corr = df_numeric.corr()
             fig = px.imshow(corr, text_auto=True, title='Matriz de Correlação')
             st.plotly_chart(fig)
+            if len(variaveis_corr) < 4:
+                st.write("**Pair Plot**")
+                fig = sns.pairplot(df[variaveis_corr])
+                st.pyplot(fig)
         st.write("______________________________________")
         st.write("______________________________________")
 
