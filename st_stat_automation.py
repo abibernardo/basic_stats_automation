@@ -468,7 +468,7 @@ def present_excel(excel_path):
         st.markdown("""
         Abaixo, deixo um vídeo-tutorial das funcionalidades da aplicação até o momento.
         """)
-        youtube_url = 'https://youtu.be/YRx7nFkqafo'
+        youtube_url = 'https://youtu.be/RZuPcBPNt_M'
         st.video(youtube_url)
 
         st.markdown("""
@@ -494,7 +494,7 @@ st.markdown("**Análises estatísticas feitas de forma simples!**")
 
 excel_path = st.file_uploader("Escolha um banco de dados para analisar", type=["xlsx", "xls"])
 url = 'https://raw.githubusercontent.com/abibernardo/basic_stats_automation/main/dados_bsa.xlsx'
-st.write("Caso queira testar as funcionalidades, baixe um excel para testar:")
+st.write("Caso queira apenas testar as funcionalidades, baixe um excel:")
 st.link_button('download', url)
 
 
