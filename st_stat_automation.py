@@ -15,11 +15,11 @@ from statsmodels.stats.diagnostic import het_breuschpagan
 import plotly.figure_factory as ff
 
 
+
+
 def alterar_tipo(column):
     tipo = st.session_state.df[column].dtypes
     st.write(f"**{column} é do tipo {tipo}**")
-    st.write("______________________________________________")
-    st.write(f"### Caso o tipo da variável esteja inadequado, para que tipo deseja alterar a coluna {column}?")
     tipos = ["-", "categórica", "numérica", "data"]
     novo_tipo = st.selectbox(
         'Escolha o tipo adequado',
@@ -34,7 +34,7 @@ def alterar_tipo(column):
                 st.session_state.df[column] = pd.to_datetime(st.session_state.df[column], errors='raise')
             st.write(f"**Coluna {column} alterada para {novo_tipo}!**")
         except Exception as e:
-            st.write(f"Erro ao tentar alterar o tipo da coluna: {e}")
+            st.write("Ops! A variável não é compatível com o tipo escolhido")
 
 
 def tratar_nan(column):
@@ -156,6 +156,20 @@ def visualizar_relacoes(df, var_numericas):
     st.write("**Gráfico de linhas**")
     st.line_chart(df)
 
+def boxplots(df, colunas_categoricas, colunas_numericas):
+    variavel_categorica_boxplot = st.selectbox('Categoria por boxplot', colunas_categoricas, key='key11')
+    variavel_numerica_boxplot = st.selectbox('Variável de interesse', colunas_numericas)
+    variavel_divisora_boxplot = st.selectbox('Categoria divisora por cor (opcional)', colunas_categoricas, key='keyy22')
+    if st.button("Visualizar Boxplots"):
+        fig = px.box(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot, title=" ")
+        st.plotly_chart(fig)
+        if variavel_categorica_boxplot != variavel_divisora_boxplot:
+            st.write("______________________________________")
+            fig = px.box(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot,
+                         color=variavel_divisora_boxplot)
+            fig.update_traces(quartilemethod="linear")
+            st.plotly_chart(fig)
+
 def correlacao(df, variaveis_corr):
     df_numeric = df[variaveis_corr]
     corr = df_numeric.corr()
@@ -186,8 +200,15 @@ def correlacao(df, variaveis_corr):
 def graficos_dispersao(df, x_dc, y_dc, cor, tamanho):
     st.write(f"______________________________")
     st.write(f"### {x_dc} x {y_dc}")
-    fig = px.scatter(df, x=x_dc, y=y_dc)
-    st.plotly_chart(fig, key="simples", on_select="rerun")
+    col20, col21 = st.columns(2)
+    with col20:
+        fig = px.scatter(df, x=x_dc, y=y_dc)
+        st.plotly_chart(fig, key="simples", on_select="rerun")
+    with col21:
+        fig = px.scatter(df, x=x_dc, y=y_dc, trendline="ols")
+        fig.update_traces(selector=dict(type='scatter', mode='lines'),
+                          line=dict(color='red', width=4))
+        st.plotly_chart(fig, key="simpless", on_select="rerun")
     st.write("______________________________________")
     st.write(f"### {x_dc} x {y_dc} dividido por {cor} (legenda selecionável)")
     fig = px.scatter(
@@ -199,8 +220,11 @@ def graficos_dispersao(df, x_dc, y_dc, cor, tamanho):
     )
     st.plotly_chart(fig, theme="streamlit", use_container_width=True)
     st.write("______________________________________")
+    st.write("______________________________________")
     st.write(f"### {x_dc} x {y_dc} dividido por {cor}")
-    fig = px.scatter(df, x=x_dc, y=y_dc, color = cor, marginal_y="violin", marginal_x="box", trendline="ols", template="simple_white")
+    fig = px.scatter(df, x=x_dc, y=y_dc, color=cor, marginal_x="rug", marginal_y="violin")
+    st.plotly_chart(fig)
+    fig = px.scatter(df, x=x_dc, y=y_dc, color = cor, marginal_y="histogram", marginal_x="box", trendline="ols", template="simple_white")
     st.plotly_chart(fig)
     st.write("______________________________________")
     st.write(f"### {x_dc} x {y_dc} por escala de cor em {tamanho}")
@@ -226,7 +250,39 @@ def graficos_dispersao(df, x_dc, y_dc, cor, tamanho):
     st.plotly_chart(fig, key="iris", on_select="rerun")
 
 
+def analisar_residuos(modelo, X):
+    residuos = modelo.resid
+    # Grafico residuos
+    fig_residuos = go.Figure()
+    fig_residuos.add_trace(go.Scatter(x=modelo.fittedvalues, y=residuos, mode='markers'))
+    fig_residuos.add_trace(go.Scatter(x=modelo.fittedvalues, y=[0] * len(residuos), mode='lines'))
+    fig_residuos.update_layout(title=" ", xaxis_title="Valores Ajustados",
+                               yaxis_title="Resíduos")
+    st.plotly_chart(fig_residuos)
+    # Teste de Normalidade dos Resíduos (Shapiro-Wilk)
+    shapiro_test = shapiro(residuos)
+    st.write("______________________________________")
+    col3, col4 = st.columns(2)
+    with col3:
+        st.write("### Teste de Normalidade dos Resíduos (Shapiro-Wilk)")
+        st.write(f"Estatística W: **{shapiro_test.statistic:.4f}**, p-valor: **{shapiro_test.pvalue:.4f}**")
 
+        # fig_qq = sm.qqplot(residuos, line='45')
+        # st.write("**QQ Plot**")
+        # st.pyplot(fig_qq)
+        if shapiro_test.pvalue < 0.06:
+            st.write("Rejeita-se hipótese de normalidade do resíduo **(!)**")
+        else:
+            st.write("Não rejeita-se hipótese de normalidade dos resíduos")
+    with col4:
+        # Teste de Homocedasticidade (Breusch-Pagan)
+        _, bp_pvalue, _, _ = het_breuschpagan(residuos, X)
+        st.write("### Teste de Homocedasticidade (Breusch-Pagan)")
+        st.write(f"p-valor: **{bp_pvalue:.4f}**")
+        if bp_pvalue < 0.06:
+            st.write("Há indícios de heterocedasticidade no resíduo **(!)**")
+        else:
+            st.write("Não rejeita-se hipótese de homocedasticidade do resíduo")
 
 
 
@@ -279,7 +335,7 @@ def manipulacao_de_dados(df):
 
 # @st.fragment
 def analise_descritiva(df):
-    st.markdown(f"___________________________________________________________________</p>", unsafe_allow_html=True)
+    st.write("___________________________________________________________________")
     st.dataframe(df, width=900)
     st.write("### O que quer visualizar?")
     visualisar = st.radio(
@@ -292,7 +348,6 @@ def analise_descritiva(df):
     )
     column_names = df.columns
     if visualisar == "Descrição das variáveis":
-        st.write("_________________________________")
         st.write("## Quais variáveis quer analisar?")
         option = st.multiselect(
             ' ',
@@ -311,16 +366,7 @@ def analise_descritiva(df):
         st.write("______________________________________")
 
         st.write("## Boxplots por categoria")
-        variavel_categorica_boxplot = st.selectbox('Categoria por boxplot', colunas_categoricas, key='key11')
-        variavel_numerica_boxplot = st.selectbox('Variável de interesse', colunas_numericas)
-        variavel_divisora_boxplot = st.selectbox('Categoria divisora por cor (opcional)', colunas_categoricas, key='keyy22')
-
-        if st.button("Visualizar Boxplots"):
-            fig = px.box(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot, title=f'{variavel_numerica_boxplot} por {variavel_categorica_boxplot}')
-            st.plotly_chart(fig)
-            if variavel_categorica_boxplot != variavel_divisora_boxplot:
-                fig = px.bar(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot, color=variavel_divisora_boxplot, barmode="group")
-                st.plotly_chart(fig)
+        boxplots(df, colunas_categoricas, colunas_numericas)
         st.write("______________________________________")
         st.write("______________________________________")
 
@@ -358,7 +404,6 @@ def analise_regressao(df):
             colunas_categoricas = X.select_dtypes(include=[object]).columns.tolist()
             X = pd.get_dummies(X, columns=colunas_categoricas, drop_first=True)
             X = sm.add_constant(X)
-
             y = st.session_state.df[y_col]
 
 
@@ -376,6 +421,7 @@ def analise_regressao(df):
 
             st.write("## Resultados do modelo")
             st.table(stats_df)
+
             st.write("_______________")
             st.write(f"### Coeficiente de determinação", round(modelo.rsquared_adj, 4))
 
@@ -391,52 +437,20 @@ def analise_regressao(df):
                             fig = px.scatter(df, x=col, y=y_col, trendline='ols', title=f'{col} vs {y_col}')
                             st.plotly_chart(fig)
                             i += 1
-                            st.write("______________________________________")
                 else:
                     with col2:
                         if pd.api.types.is_numeric_dtype(st.session_state.df[col]):
                             fig = px.scatter(df, x=col, y=y_col, trendline='ols', title=f'{col} vs {y_col}')
                             st.plotly_chart(fig)
                             i += 1
-                            st.write("______________________________________")
+
 
 
             # Gráfico de resíduos
             st.write("**Atenção: modelos de regressão só são úteis se cumprirem pressupostos estatísticos que validam os seus resultados. Por isso, recomenda-se fortemente sempre analisar os resíduos do seu modelo.**")
             st.write("______________________________________")
             st.write("# Análise de resíduos")
-            residuos = modelo.resid
-            # Grafico residuos
-            fig_residuos = go.Figure()
-            fig_residuos.add_trace(go.Scatter(x=modelo.fittedvalues, y=residuos, mode='markers'))
-            fig_residuos.add_trace(go.Scatter(x=modelo.fittedvalues, y=[0] * len(residuos), mode='lines'))
-            fig_residuos.update_layout(title=" ", xaxis_title="Valores Ajustados",
-                                           yaxis_title="Resíduos")
-            st.plotly_chart(fig_residuos)
-            # Teste de Normalidade dos Resíduos (Shapiro-Wilk)
-            shapiro_test = shapiro(residuos)
-            st.write("______________________________________")
-            col3, col4 = st.columns(2)
-            with col3:
-                st.write("### Teste de Normalidade dos Resíduos (Shapiro-Wilk)")
-                st.write(f"Estatística W: **{shapiro_test.statistic:.4f}**, p-valor: **{shapiro_test.pvalue:.4f}**")
-
-                #fig_qq = sm.qqplot(residuos, line='45')
-                #st.write("**QQ Plot**")
-                #st.pyplot(fig_qq)
-                if shapiro_test.pvalue < 0.06:
-                    st.write("Rejeita-se hipótese de normalidade do resíduo **(!)**")
-                else:
-                    st.write("Não rejeita-se hipótese de normalidade dos resíduos")
-            with col4:
-                # Teste de Homocedasticidade (Breusch-Pagan)
-                _, bp_pvalue, _, _ = het_breuschpagan(residuos, X)
-                st.write("### Teste de Homocedasticidade (Breusch-Pagan)")
-                st.write(f"p-valor: **{bp_pvalue:.4f}**")
-                if bp_pvalue < 0.06:
-                    st.write("Há indícios de heterocedasticidade no resíduo **(!)**")
-                else:
-                    st.write("Não rejeita-se hipótese de homocedasticidade do resíduo")
+            analisar_residuos(modelo, X)
 
 
 
