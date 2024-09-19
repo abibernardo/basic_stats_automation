@@ -121,8 +121,6 @@ def visualizar_medidas(df, option):
                 col5, col6 = st.columns(2)
                 with col5:
                     st.write(contagem)
-                    st.write(f'Valores únicos: {val_unicos}')
-                    st.write(f'Moda: {moda}')
                 with col6:
                     category_counts = df[c].value_counts().reset_index()
                     category_counts.columns = ['Categoria', 'Contagem']
@@ -455,10 +453,20 @@ def analise_regressao(df):
 
 
 def present_excel(excel_path):
-    excel_file = pd.ExcelFile(excel_path)
-    df = pd.read_excel(excel_file)
+    try:
+        excel_file = pd.ExcelFile(excel_path)
+        df = pd.read_excel(excel_file)
+    except Exception as e:
+        try:
+            # Tentar carregar como CSV
+            df = pd.read_csv(excel_path)
+        except Exception as e:
+            st.write(" ")
     if 'df' not in st.session_state:
-        st.session_state.df = pd.read_excel(excel_file)
+        st.session_state.df = df
+
+
+
 
     st.sidebar.subheader("Escolha a análise que deseja realizar")
 
@@ -503,13 +511,15 @@ def present_excel(excel_path):
 resultados_categoricos = {}
 
 st.title("ESTATÍSTICA BÁSICA SEMI AUTOMATIZADA")
-st.markdown("**Análises estatísticas feitas de forma simples!**")
+st.markdown("### Análises estatísticas feitas de forma simples!")
 
 
-excel_path = st.file_uploader("Escolha um banco de dados para analisar", type=["xlsx", "xls"])
+excel_path = st.file_uploader("Escolha um conjunto de dados para analisar", type=["xlsx", "xls", "csv"])
 url = 'https://raw.githubusercontent.com/abibernardo/basic_stats_automation/main/dados_bsa.xlsx'
-st.write("Caso queira apenas testar as funcionalidades, baixe um excel:")
-st.link_button('download', url)
+st.link_button('ou clique aqui para baixar dados-teste', url)
+#cola, colb, colc, cold, cole = st.columns(5)
+#with colc:
+   # st.link_button('ou baixe dados para testar', url)
 
 
 if excel_path is not None:
