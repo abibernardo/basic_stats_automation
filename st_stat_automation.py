@@ -1,5 +1,12 @@
+import statsmodels.api as sm
+import polars as pl
+import pandas as pd
+import numpy as np
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
 import pandas as pd
 import streamlit as st
+import random
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -13,9 +20,17 @@ import plotly.graph_objects as go
 from scipy.stats import shapiro
 from statsmodels.stats.diagnostic import het_breuschpagan
 import plotly.figure_factory as ff
-
-
-
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+import streamlit as st
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 def alterar_tipo(column):
     tipo = st.session_state.df[column].dtypes
@@ -450,7 +465,92 @@ def analise_regressao(df):
             st.write("# Análise de resíduos")
             analisar_residuos(modelo, X)
 
+def knn(df):
+    st.title("K-Vizinhos mais Próximos")
+    try:
+        colunas_categoricas = df.select_dtypes(include=['object', 'category']).columns.tolist()
+        colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
+        y_col = st.selectbox('Selecione a variável resposta (Y)', colunas_categoricas)
+        X_col = st.multiselect('Selecione os preditores (X)', colunas_numericas)
+        vizinhos = st.slider("Quantos k-vizinhos considerar?", 1, 30, 1)
 
+        if y_col and X_col:
+            df = st.session_state.df[X_col + [y_col]].dropna(how='all')
+            X = df.drop(y_col, axis=1)
+            y = df[y_col]
+            np.random.seed(42)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+            # Scale the features using StandardScaler
+            scaler = StandardScaler()
+            X_train_scaled = scaler.fit_transform(X_train)
+            X_test_scaled = scaler.transform(X_test)
+
+            # Inicializar lista para armazenar o erro percentual
+            perc_erro = []
+
+            # Loop para testar diferentes valores de K
+            for i in range(1, 30):
+                # Criar o modelo KNN com k = i
+                knn = KNeighborsClassifier(n_neighbors=i)
+
+                # Treinar o modelo
+                knn.fit(X_train_scaled, y_train)
+
+                # Fazer previsões no conjunto de teste
+                previsoes = knn.predict(X_test_scaled)
+
+                # Calcular o percentual de erro
+                perc_erro.append(np.mean(previsoes != y_test))
+
+            # Criar DataFrame com valores de K e os erros percentuais
+            k_values = np.arange(1, 30)
+            error_df = pd.DataFrame({'k_values': k_values, 'perc_erro': perc_erro})
+
+            # Visualizar o erro percentual
+            plt.figure(figsize=(8, 6))
+            plt.plot(k_values, perc_erro, linestyle='dotted', color='red', marker='o')
+            plt.xlabel('Valores de K')
+            plt.ylabel('Percentual de Erro')
+            plt.title('Erro Percentual para diferentes valores de K no KNN')
+            plt.grid(True)
+
+            # Treinar o modelo KNN com o número de vizinhos selecionado
+            knn = KNeighborsClassifier(n_neighbors=vizinhos)
+            knn.fit(X_train_scaled, y_train)
+
+            # Fazer previsões com o modelo ajustado
+            y_pred = knn.predict(X_test_scaled)
+
+            # Calcular a precisão
+            accuracy = accuracy_score(y_test, y_pred)
+            accuracy = round(accuracy, 3)
+
+            st.divider()
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(f'### Previsão de "{y_col}"')
+            with col2:
+                st.write(f'### {vizinhos} vizinhos mais próximos')
+            with col3:
+                st.write(f'### Precisão de {accuracy}')
+            st.divider()
+            st.pyplot(plt)
+            st.divider()
+            st.write(" ")
+            conf_matrix = confusion_matrix(y_test, previsoes)
+            st.write("### Matriz de Confusão")
+            st.write(conf_matrix)
+    except Exception as e:
+        st.write(e)
+        st.write("## OPS! Houve alguma inconsistência...")
+        st.write(" ")
+        st.write("Averigue se:")
+        st.write("1. A variável RESPOSTA é categórica e está escrita corretamente")
+        st.write("2. As outras colunas são numéricas OU codificadas numéricamente")
+        st.write("3. Todas as colunas existem")
+        st.write("4. Os valores faltantes foram devidamente preenchidos:")
+        st.data_editor(df)
 
 def present_excel(excel_path):
     try:
@@ -466,37 +566,6 @@ def present_excel(excel_path):
         st.session_state.df = df
 
 
-
-
-    st.sidebar.subheader("Escolha a análise que deseja realizar")
-
-    secs = ["Apresentação", "Manipulação de dados", "Análise descritiva", "Modelo de regressão"]
-    tickers = secs
-    ticker = st.sidebar.selectbox("Seções", tickers)
-
-    if ticker == "Apresentação":
-        st.title("Olá!!!")
-
-        st.markdown("""
-        Esta aplicação foi criada com o propósito de simplificar análises estatísticas básicas, de modo a auxiliar que estudantes/pesquisadores das ciências humanas que não possuem familiaridade com linguagens de programação, possam visualizar seus dados sem terem que recorrer a softwares.
-        """)
-
-        st.header("Orientações:")
-        st.markdown("""
-        Antes de ir para as seções de análises estatísticas, faça o tratamento da sua planilha na seção **"Manipulação de dados"**. Lá, você poderá fazer as devidas alterações para que todas as outras etapas ocorram sem erros. Caso a aplicação dê resultados incoerentes, retorne a essa etapa para verificar aonde está o problema.
-        *Por exemplo: se receber um gráfico que não faça sentido, verifique se sua variável é do tipo adequado no item **"Tipo"**, dentro de **"Manipulação de dados"**.*
-        """)
-
-        st.markdown("""
-        Abaixo, deixo um vídeo-tutorial das funcionalidades da aplicação até o momento.
-        """)
-        youtube_url = 'https://youtu.be/RZuPcBPNt_M'
-        st.video(youtube_url)
-
-        st.markdown("""
-        Em caso de dúvidas, contate: [bernardoabib1@gmail.com](mailto:bernardoabib1@gmail.com)
-        """)
-
     if ticker == "Manipulação de dados":
         st.title("**Manipulação de dados**")
         manipulacao_de_dados(st.session_state.df)
@@ -508,20 +577,45 @@ def present_excel(excel_path):
     if ticker == "Modelo de regressão":
         analise_regressao(df)
 
+    if ticker == "Modelo de classificação":
+        knn(df)
+
 resultados_categoricos = {}
 
-st.title("ESTATÍSTICA BÁSICA SEMI AUTOMATIZADA")
-st.markdown("### Análises estatísticas feitas de forma simples!")
+st.sidebar.subheader("Escolha a análise que deseja realizar")
 
+secs = ["Apresentação", "Manipulação de dados", "Análise descritiva", "Modelo de regressão", "Modelo de classificação"]
+tickers = secs
+ticker = st.sidebar.selectbox("Seções", tickers)
+if ticker == "Apresentação":
+    st.title("ESTATÍSTICA BÁSICA SEMI AUTOMATIZADA")
+    st.divider()
+    st.title("Olá!!!")
+
+    st.markdown("""
+    Esta aplicação foi criada com o propósito de simplificar análises estatísticas básicas, de modo a auxiliar que estudantes/pesquisadores das ciências humanas que não possuem familiaridade com linguagens de programação, possam visualizar seus dados sem terem que recorrer a softwares.
+    """)
+
+    st.header("Orientações:")
+    st.markdown("""
+    Antes de ir para as seções de análises estatísticas, faça o tratamento da sua planilha na seção **"Manipulação de dados"**. Lá, você poderá fazer as devidas alterações para que todas as outras etapas ocorram sem erros. Caso a aplicação dê resultados incoerentes, retorne a essa etapa para verificar aonde está o problema.
+    *Por exemplo: se receber um gráfico que não faça sentido, verifique se sua variável é do tipo adequado no item **"Tipo"**, dentro de **"Manipulação de dados"**.* Caso deseje alterar o conjunto de dados, *recarregue o site*.
+    """)
+
+    st.markdown("""
+    Abaixo, deixo um vídeo-tutorial das funcionalidades da aplicação até o momento.
+    """)
+    youtube_url = 'https://youtu.be/RZuPcBPNt_M'
+    url = 'https://raw.githubusercontent.com/abibernardo/basic_stats_automation/main/dados_bsa.xlsx'
+    st.video(youtube_url)
+    st.markdown("""
+    Em caso de dúvidas, contate: [bernardoabib1@gmail.com](mailto:bernardoabib1@gmail.com)
+    """)
+    st.divider()
+    st.link_button('clique aqui para baixar dados-teste', url)
+    st.divider()
 
 excel_path = st.file_uploader("Escolha um conjunto de dados para analisar", type=["xlsx", "xls", "csv"])
-url = 'https://raw.githubusercontent.com/abibernardo/basic_stats_automation/main/dados_bsa.xlsx'
-st.link_button('ou clique aqui para baixar dados-teste', url)
-#cola, colb, colc, cold, cole = st.columns(5)
-#with colc:
-   # st.link_button('ou baixe dados para testar', url)
-
-
 if excel_path is not None:
     present_excel(excel_path)
 
@@ -530,5 +624,3 @@ if st.session_state.get('filtros_aplicados', []):
     st.sidebar.write(f"**Filtros aplicados:** {', '.join(st.session_state.get('filtros_aplicados', []))}")
 
 
-
-#streamlit run main.py
