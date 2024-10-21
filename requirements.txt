@@ -1,24 +1,21 @@
-# Removido versões rígidas para permitir maior flexibilidade de instalação
+# Bibliotecas necessárias
 
-# Principais pacotes
+# Processamento de dados
+polars
 pandas
 numpy
-scikit-learn
-joblib
 
-# Substituindo pandas-profiling por ydata-profiling (mais recente)
-ydata-profiling
+# Modelagem estatística
+statsmodels
+scipy
 
-# Visions, com a versão compatível com ydata-profiling
-visions>=0.7.5,<0.7.7
-
-# Outros pacotes, sem especificação de versão para evitar conflitos
+# Visualização de dados
 matplotlib
 seaborn
-phik
-
-# Streamlit, mas sem o streamlit-pandas-profiling que estava causando conflito
-streamlit
-
-# Outros pacotes para visualização e análise
 plotly
+
+# Machine Learning
+scikit-learn
+
+# Interface com o usuário
+streamlit
