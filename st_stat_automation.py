@@ -538,7 +538,7 @@ def knn(df):
             st.pyplot(plt)
             st.divider()
             st.write(" ")
-            conf_matrix = confusion_matrix(y_test, previsoes)
+            conf_matrix = confusion_matrix(y_test, y_pred)
             st.write("### Matriz de Confusão")
             st.write(conf_matrix)
     except Exception as e:
