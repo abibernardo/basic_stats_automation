@@ -15,6 +15,7 @@ import plotly.express as px
 import statsmodels.api as sm
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+from statsmodels.stats.anova import anova_lm
 import plotly.express as px
 import plotly.graph_objects as go
 from scipy.stats import shapiro
@@ -33,21 +34,33 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
 def alterar_tipo(column):
-    tipo = st.session_state.df[column].dtypes
-    st.write(f"**{column} é do tipo {tipo}**")
-    tipos = ["-", "categórica", "numérica", "data"]
+    if pd.api.types.is_numeric_dtype(st.session_state.df[column]):
+        st.write(f"**{column} é numérica*")
+    elif pd.api.types.is_categorical_dtype(st.session_state.df[column]) or pd.api.types.is_object_dtype(
+            st.session_state.df[column]):
+        st.write(f"**{column} é categórica*")
+    else:
+        tipo = st.session_state.df[column].dtypes
+        st.write(f"**{column} é do tipo {tipo}**")
+    tipos = ["-", "categórica", "numérica"]
     novo_tipo = st.selectbox(
         'Escolha o tipo adequado',
         tipos)
     if st.button("Mudar tipo da variável"):
         try:
             if novo_tipo == 'categórica':
-                st.session_state.df[column] = st.session_state.df[column].astype(str)
+                if pd.api.types.is_categorical_dtype(st.session_state.df[column]) or pd.api.types.is_object_dtype(
+                        st.session_state.df[column]):
+                    st.write("Variável já é do tipo categórica.")
+                else:
+                    st.session_state.df[column] = st.session_state.df[column].astype(str)
+                    st.write(f'{column} alterada para categórica.')
             elif novo_tipo == 'numérica':
-                st.session_state.df[column] = pd.to_numeric(st.session_state.df[column], errors='raise')
-            elif novo_tipo == 'data':
-                st.session_state.df[column] = pd.to_datetime(st.session_state.df[column], errors='raise')
-            st.write(f"**Coluna {column} alterada para {novo_tipo}!**")
+                if pd.api.types.is_numeric_dtype(st.session_state.df[column]):
+                    st.write("Variável já é do tipo numérica.")
+                else:
+                    st.session_state.df[column] = pd.to_numeric(st.session_state.df[column], errors='raise')
+                    st.write(f'{column} alterada para numérica.')
         except Exception as e:
             st.write("Ops! A variável não é compatível com o tipo escolhido")
 
@@ -113,17 +126,17 @@ def visualizar_medidas(df, option):
                 if quant_nan:
                     st.write(quant_nan, "dados faltantes")
 
-                st.write("_____________________________________")
+                st.divider()
                 st.write("**Gráfico de dispersão**")
                 st.scatter_chart(df[c])
-                st.write("_____________________________________")
+                st.divider()
                 st.write("**Histograma**")
                 fig = px.histogram(df, x=c)
                 st.plotly_chart(fig)
-                st.write("_____________________________________")
+                st.divider()
                 st.write("**Gráfico de linha**")
                 st.line_chart(df[c])
-                st.write("_____________________________________")
+                st.divider()
                 st.write("**Boxplot**")
                 fig = px.box(df, y=c)
                 st.plotly_chart(fig)
@@ -148,7 +161,7 @@ def visualizar_medidas(df, option):
 
 
 
-            st.write("_____________________________________")
+            st.divider()
         except Exception as ex:
             st.write("Ops, houve algum erro. Verifique a formatação da sua planilha")
 
@@ -156,16 +169,19 @@ def visualizar_relacoes(df, var_numericas):
     df = df[var_numericas]
     st.write("**Gráfico de dispersão**")
     st.scatter_chart(df)
-    st.write("_____________________________________")
+    st.divider()
     st.write("**Histograma**")
     fig = px.histogram(df)
     st.plotly_chart(fig)
-    group_labels = df.columns.tolist()  # Obter rótulos das colunas
-    hist_data = [df[col].dropna().tolist() for col in df.columns]
-    fig = ff.create_distplot(
-        hist_data, group_labels, bin_size=[.1, .25, .5])
-    st.plotly_chart(fig)
-    st.write("_____________________________________")
+    try:
+        group_labels = df.columns.tolist()  # Obter rótulos das colunas
+        hist_data = [df[col].dropna().tolist() for col in df.columns]
+        fig = ff.create_distplot(
+            hist_data, group_labels, bin_size=[.1, .25, .5])
+        st.plotly_chart(fig)
+    except Exception as e:
+        st.write(" ")
+    st.divider()
     st.write("**Gráfico de linhas**")
     st.line_chart(df)
 
@@ -173,11 +189,11 @@ def boxplots(df, colunas_categoricas, colunas_numericas):
     variavel_categorica_boxplot = st.selectbox('Categoria por boxplot', colunas_categoricas, key='key11')
     variavel_numerica_boxplot = st.selectbox('Variável de interesse', colunas_numericas)
     variavel_divisora_boxplot = st.selectbox('Categoria divisora por cor (opcional)', colunas_categoricas, key='keyy22')
-    if st.button("Visualizar Boxplots"):
+    if st.button("Visualizar", key='boxp'):
         fig = px.box(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot, title=" ")
         st.plotly_chart(fig)
         if variavel_categorica_boxplot != variavel_divisora_boxplot:
-            st.write("______________________________________")
+            st.divider()
             fig = px.box(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot,
                          color=variavel_divisora_boxplot)
             fig.update_traces(quartilemethod="linear")
@@ -211,8 +227,8 @@ def correlacao(df, variaveis_corr):
     st.plotly_chart(fig)
 
 def graficos_dispersao(df, x_dc, y_dc, cor, tamanho):
-    st.write(f"______________________________")
-    st.write(f"### {x_dc} x {y_dc}")
+    st.divider()
+    st.write(f"{x_dc} x {y_dc}")
     col20, col21 = st.columns(2)
     with col20:
         fig = px.scatter(df, x=x_dc, y=y_dc)
@@ -222,8 +238,8 @@ def graficos_dispersao(df, x_dc, y_dc, cor, tamanho):
         fig.update_traces(selector=dict(type='scatter', mode='lines'),
                           line=dict(color='red', width=4))
         st.plotly_chart(fig, key="simpless", on_select="rerun")
-    st.write("______________________________________")
-    st.write(f"### {x_dc} x {y_dc} dividido por {cor} (legenda selecionável)")
+    st.divider()
+    st.write(f"{x_dc} x {y_dc} dividido por {cor}")
     fig = px.scatter(
         df,
         x=x_dc,
@@ -232,15 +248,14 @@ def graficos_dispersao(df, x_dc, y_dc, cor, tamanho):
         color_continuous_scale="reds",
     )
     st.plotly_chart(fig, theme="streamlit", use_container_width=True)
-    st.write("______________________________________")
-    st.write("______________________________________")
-    st.write(f"### {x_dc} x {y_dc} dividido por {cor}")
+    st.divider()
+    st.write(f"{x_dc} x {y_dc} dividido por {cor}")
     fig = px.scatter(df, x=x_dc, y=y_dc, color=cor, marginal_x="rug", marginal_y="violin")
     st.plotly_chart(fig)
     fig = px.scatter(df, x=x_dc, y=y_dc, color = cor, marginal_y="histogram", marginal_x="box", trendline="ols", template="simple_white")
     st.plotly_chart(fig)
-    st.write("______________________________________")
-    st.write(f"### {x_dc} x {y_dc} por escala de cor em {tamanho}")
+    st.divider()
+    st.write(f"{x_dc} x {y_dc} por escala de cor em {tamanho}")
     fig = px.scatter(
         df,
         x=x_dc,
@@ -249,8 +264,8 @@ def graficos_dispersao(df, x_dc, y_dc, cor, tamanho):
         color_continuous_scale="reds",
     )
     st.plotly_chart(fig, theme="streamlit", use_container_width=True)
-    st.write("______________________________________")
-    st.write(f"### {x_dc} x {y_dc} dividido por cor em {cor} e tamanho em {tamanho}")
+    st.divider()
+    st.write(f"{x_dc} x {y_dc} dividido por cor em {cor} e tamanho em {tamanho}")
     fig = px.scatter(
         df,
         x=x_dc,
@@ -259,6 +274,7 @@ def graficos_dispersao(df, x_dc, y_dc, cor, tamanho):
         size=tamanho,
         hover_data=None,
     )
+
 
     st.plotly_chart(fig, key="iris", on_select="rerun")
 
@@ -274,7 +290,7 @@ def analisar_residuos(modelo, X):
     st.plotly_chart(fig_residuos)
     # Teste de Normalidade dos Resíduos (Shapiro-Wilk)
     shapiro_test = shapiro(residuos)
-    st.write("______________________________________")
+    st.divider()
     col3, col4 = st.columns(2)
     with col3:
         st.write("### Teste de Normalidade dos Resíduos (Shapiro-Wilk)")
@@ -301,7 +317,7 @@ def analisar_residuos(modelo, X):
 
 def manipulacao_de_dados(df):
     st.data_editor(df)
-    st.write("______________________________________________")
+    st.divider()
     column_names = st.session_state.df.columns
     tratamentos = ["Valores faltantes", "Alterar tipos", "Filtragem de dados"]
     st.write("## Deseja fazer que tipo de tratamento?")
@@ -309,7 +325,7 @@ def manipulacao_de_dados(df):
         " ",
         tratamentos,
     )
-    st.write("______________________________________________")
+    st.divider()
 
     if tratamento == "Alterar tipos":
         column = st.selectbox(
@@ -348,7 +364,7 @@ def manipulacao_de_dados(df):
 
 # @st.fragment
 def analise_descritiva(df):
-    st.write("___________________________________________________________________")
+    st.divider()
     st.dataframe(df, width=900)
     st.write("### O que quer visualizar?")
     visualisar = st.radio(
@@ -364,8 +380,8 @@ def analise_descritiva(df):
         st.write("## Quais variáveis quer analisar?")
         option = st.multiselect(
             ' ',
-            column_names, key='unique_key_1')
-        if st.button("Visualizar"):
+            column_names, key='descritiva')
+        if st.button("Visualizar", key='desc'):
             visualizar_medidas(df, option)
 
     if visualisar == "Relação entre variáveis":
@@ -373,23 +389,20 @@ def analise_descritiva(df):
         colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
         st.write("## Análises de variáveis numéricas")
         var_numericas = st.multiselect('Variáveis numéricas de interesse', colunas_numericas)
-        if st.button("Visualizar gráficos"):
+        if st.button("Visualizar", key='numericas'):
             visualizar_relacoes(df, var_numericas)
-        st.write("______________________________________")
-        st.write("______________________________________")
+        st.divider()
 
         st.write("## Boxplots por categoria")
         boxplots(df, colunas_categoricas, colunas_numericas)
-        st.write("______________________________________")
-        st.write("______________________________________")
+        st.divider()
 
         st.write("## Matriz de correlação")
         variaveis_corr = st.multiselect(' ', colunas_numericas)
 
-        if st.button("Visualizar"):
+        if st.button("Visualizar", key='corr'):
             correlacao(df, variaveis_corr)
-        st.write("______________________________________")
-        st.write("______________________________________")
+        st.divider()
 
         st.write("## Gráficos de dispersão mais avançados")
 
@@ -397,8 +410,8 @@ def analise_descritiva(df):
         y_dc = st.selectbox('Variável Y', colunas_numericas)
         cor = st.selectbox('Variável categórica divisora:', colunas_categoricas)
         tamanho = st.selectbox('Variável numérica divisora:', colunas_numericas)
-        st.write("______________________________________")
-        if st.button("Mostrar gráficos"):
+        st.divider()
+        if st.button("Visualizar", key='disper'):
             graficos_dispersao(df, x_dc, y_dc, cor, tamanho)
 
 
@@ -411,16 +424,22 @@ def analise_regressao(df):
     y_col = st.selectbox('Selecione a variável resposta (Y)', colunas_numericas)
     X_col = st.multiselect('Selecione os preditores (X)', column_names)
 
-    if st.button("Executar Regressão Linear"):
+    if st.button("Modelar!", key='reglin'):
         if y_col and X_col:
-            X = st.session_state.df[X_col]
-            colunas_categoricas = X.select_dtypes(include=[object]).columns.tolist()
-            X = pd.get_dummies(X, columns=colunas_categoricas, drop_first=True)
+            X_1 = st.session_state.df[X_col]
+            colunas_categoricas = X_1.select_dtypes(include=[object]).columns.tolist()
+            X = pd.get_dummies(X_1, columns=colunas_categoricas, drop_first=True)
             X = sm.add_constant(X)
             y = st.session_state.df[y_col]
 
 
             modelo = sm.OLS(y, X.astype(float)).fit()
+
+            ### ANOVA
+            formula = f"{y_col} ~ {' + '.join(X_col)}"
+            modelo_anova = ols(formula, data=df).fit()
+            anova_resultado = anova_lm(modelo_anova)
+
 
             stats_dict = {
                 'Preditor': modelo.params.index,
@@ -432,15 +451,14 @@ def analise_regressao(df):
             stats_df = pd.DataFrame(stats_dict)
 
 
-            st.write("## Resultados do modelo")
+            st.write("## Tabela de Coeficientes")
             st.table(stats_df)
-
-            st.write("_______________")
+            st.divider()
+            st.write("## Tabela ANOVA")
+            st.table(anova_resultado)
+            st.divider()
             st.write(f"### Coeficiente de determinação", round(modelo.rsquared_adj, 4))
 
-
-
-            # Visualização da regressão
             col1, col2 = st.columns(2)
             i = 0
             for col in X_col:
@@ -461,7 +479,7 @@ def analise_regressao(df):
 
             # Gráfico de resíduos
             st.write("**Atenção: modelos de regressão só são úteis se cumprirem pressupostos estatísticos que validam os seus resultados. Por isso, recomenda-se fortemente sempre analisar os resíduos do seu modelo.**")
-            st.write("______________________________________")
+            st.divider()
             st.write("# Análise de resíduos")
             analisar_residuos(modelo, X)
 
@@ -472,7 +490,6 @@ def knn(df):
         colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
         y_col = st.selectbox('Selecione a variável resposta (Y)', colunas_categoricas)
         X_col = st.multiselect('Selecione os preditores (X)', colunas_numericas)
-        vizinhos = st.slider("Quantos k-vizinhos considerar?", 1, 30, 1)
 
         if y_col and X_col:
             df = st.session_state.df[X_col + [y_col]].dropna(how='all')
@@ -505,42 +522,60 @@ def knn(df):
 
             # Criar DataFrame com valores de K e os erros percentuais
             k_values = np.arange(1, 30)
-            error_df = pd.DataFrame({'k_values': k_values, 'perc_erro': perc_erro})
 
-            # Visualizar o erro percentual
-            plt.figure(figsize=(8, 6))
-            plt.plot(k_values, perc_erro, linestyle='dotted', color='red', marker='o')
-            plt.xlabel('Valores de K')
-            plt.ylabel('Percentual de Erro')
-            plt.title('Erro Percentual para diferentes valores de K no KNN')
-            plt.grid(True)
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=k_values,
+                y=perc_erro,
+                mode='lines+markers',
+                line=dict(dash='dot', color='red'),
+                marker=dict(symbol='circle'),
+                name='Percentual de Erro'
+            ))
+            fig.update_layout(
+                title='Erro Percentual para diferentes valores de K',
+                xaxis_title='K-vizinhos',
+                yaxis_title='Percentual de Erro',
+                template="plotly_white",
+                width=800,
+                height=600
+            )
+
+            fig.update_xaxes(showgrid=True)
+            fig.update_yaxes(showgrid=True)
+            st.divider()
+            st.plotly_chart(fig)
+            st.divider()
+
 
             # Treinar o modelo KNN com o número de vizinhos selecionado
-            knn = KNeighborsClassifier(n_neighbors=vizinhos)
-            knn.fit(X_train_scaled, y_train)
 
-            # Fazer previsões com o modelo ajustado
-            y_pred = knn.predict(X_test_scaled)
+            vizinhos = st.slider("Quantos k-vizinhos considerar?", 1, 30, 1)
+            if st.button("Modelar!", key='knn'):
+                knn = KNeighborsClassifier(n_neighbors=vizinhos)
+                knn.fit(X_train_scaled, y_train)
 
-            # Calcular a precisão
-            accuracy = accuracy_score(y_test, y_pred)
-            accuracy = round(accuracy, 3)
+                # Fazer previsões com o modelo ajustado
+                y_pred = knn.predict(X_test_scaled)
 
-            st.divider()
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.write(f'### Previsão de "{y_col}"')
-            with col2:
-                st.write(f'### {vizinhos} vizinhos mais próximos')
-            with col3:
-                st.write(f'### Precisão de {accuracy}')
-            st.divider()
-            st.pyplot(plt)
-            st.divider()
-            st.write(" ")
-            conf_matrix = confusion_matrix(y_test, y_pred)
-            st.write("### Matriz de Confusão")
-            st.write(conf_matrix)
+                # Calcular a precisão
+                accuracy = accuracy_score(y_test, y_pred)
+                accuracy = round(accuracy, 3)
+                st.divider()
+
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.write(f'### Previsão de "{y_col}"')
+                with col2:
+                    st.write(f'### {vizinhos} vizinhos mais próximos')
+                with col3:
+                    st.write(f'### Precisão de {accuracy}')
+                st.divider()
+                st.write(" ")
+                conf_matrix = confusion_matrix(y_test, y_pred)
+                with col2:
+                    st.divider()
+                    st.write(conf_matrix)
     except Exception as e:
         st.write(e)
         st.write("## OPS! Houve alguma inconsistência...")
@@ -612,8 +647,6 @@ if ticker == "Apresentação":
     Em caso de dúvidas, contate: [bernardoabib1@gmail.com](mailto:bernardoabib1@gmail.com)
     """)
     st.divider()
-    st.link_button('clique aqui para baixar dados-teste', url)
-    st.divider()
 
 excel_path = st.file_uploader("Escolha um conjunto de dados para analisar", type=["xlsx", "xls", "csv"])
 if excel_path is not None:
@@ -622,4 +655,3 @@ if excel_path is not None:
 
 if st.session_state.get('filtros_aplicados', []):
     st.sidebar.write(f"**Filtros aplicados:** {', '.join(st.session_state.get('filtros_aplicados', []))}")
-
