@@ -588,6 +588,7 @@ def knn(df):
         st.data_editor(df)
 
 def present_excel(excel_path):
+    df = None
     try:
         excel_file = pd.ExcelFile(excel_path)
         df = pd.read_excel(excel_file)
@@ -597,8 +598,11 @@ def present_excel(excel_path):
             df = pd.read_csv(excel_path)
         except Exception as e:
             st.write(" ")
-    if 'df' not in st.session_state:
-        st.session_state.df = df
+    if df is not None:
+        if 'df' not in st.session_state:
+            st.session_state.df = df
+    else:
+        st.write("Não foi possível carregar o arquivo.")
 
 
     if ticker == "Manipulação de dados":
