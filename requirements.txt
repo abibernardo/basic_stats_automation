@@ -1,9 +1,9 @@
-# Bibliotecas necessárias
-
 # Processamento de dados
 polars
 pandas
 numpy
+openpyxl  # Necessário para arquivos .xlsx
+xlrd      # Necessário para arquivos .xls
 
 # Modelagem estatística
 statsmodels
