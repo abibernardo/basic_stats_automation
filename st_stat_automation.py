@@ -588,7 +588,7 @@ def knn(df):
         st.data_editor(df)
 
 def present_excel(excel_path):
-    df = None
+    df = None  # Inicializa df como None para evitar erro de escopo
     try:
         excel_file = pd.ExcelFile(excel_path)
         df = pd.read_excel(excel_file)
@@ -597,27 +597,30 @@ def present_excel(excel_path):
             # Tentar carregar como CSV
             df = pd.read_csv(excel_path)
         except Exception as e:
-            st.write(" ")
+            st.write("Erro ao carregar o arquivo. Certifique-se de que o formato está correto.")
+
+    # Atribui o DataFrame ao session_state se foi carregado com sucesso
     if df is not None:
-        if 'df' not in st.session_state:
-            st.session_state.df = df
+        st.session_state.df = df
+
+    # Verifica se 'df' foi atribuído com sucesso antes de acessar as opções do ticker
+    if 'df' in st.session_state:
+        if ticker == "Manipulação de dados":
+            st.title("**Manipulação de dados**")
+            manipulacao_de_dados(st.session_state.df)
+
+        elif ticker == "Análise descritiva":
+            st.title("**Análise descritiva**")
+            analise_descritiva(st.session_state.df)
+
+        elif ticker == "Modelo de regressão":
+            analise_regressao(st.session_state.df)
+
+        elif ticker == "Modelo de classificação":
+            knn(st.session_state.df)
     else:
-        st.write("Não foi possível carregar o arquivo.")
+        st.write("Não foi possível carregar os dados para continuar.")
 
-
-    if ticker == "Manipulação de dados":
-        st.title("**Manipulação de dados**")
-        manipulacao_de_dados(st.session_state.df)
-
-    if ticker == "Análise descritiva":
-        st.title("**Análise descritiva**")
-        analise_descritiva(st.session_state.df)
-
-    if ticker == "Modelo de regressão":
-        analise_regressao(df)
-
-    if ticker == "Modelo de classificação":
-        knn(df)
 
 resultados_categoricos = {}
 
