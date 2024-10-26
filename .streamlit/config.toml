@@ -1,3 +1,5 @@
+[global]
+
 [theme]
 base = "dark"  # Ativa o tema escuro
 primaryColor = "#008B8B"  # Cor principal para botões e links
