@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
+
 def alterar_tipo(column):
     if pd.api.types.is_numeric_dtype(st.session_state.df[column]):
         st.write(f"**{column} é numérica*")
@@ -313,6 +314,114 @@ def analisar_residuos(modelo, X):
         else:
             st.write("Não rejeita-se hipótese de homocedasticidade do resíduo")
 
+def preditos_x_reais(modelo, X, y):
+    y_pred = modelo.predict(X)
+
+    # Cria o gráfico de dispersão com Plotly
+    fig = go.Figure()
+
+    # Adiciona os pontos reais vs preditos
+    fig.add_trace(go.Scatter(
+        x=y,
+        y=y_pred,
+        mode="markers",
+        name="Valores Preditos",
+        marker=dict(color="blue")
+    ))
+
+    # Adiciona a linha de referência (y = x)
+    fig.add_trace(go.Scatter(
+        x=[y.min(), y.max()],
+        y=[y.min(), y.max()],
+        mode="lines",
+        name="Linha de Referência (y=x)",
+        line=dict(color="red", dash="dash")
+    ))
+
+    # Configurações do layout
+    fig.update_layout(
+        title="Gráfico de Valores Reais vs. Valores Preditos",
+        xaxis_title="Valores Reais",
+        yaxis_title="Valores Preditos",
+        showlegend=True,
+        width=800,
+        height=600
+    )
+
+    # Exibe o gráfico no Streamlit
+    st.plotly_chart(fig)
+
+
+
+@st.fragment
+def novas_obs(modelo, X_col, y_col):
+    if "novas_observacoes" not in st.session_state:
+        st.session_state["novas_observacoes"] = pd.DataFrame(columns=modelo.model.exog_names + [y_col])
+    if "prev_X_col" not in st.session_state or st.session_state["prev_X_col"] != X_col:
+        st.session_state["novas_observacoes"] = pd.DataFrame(columns=modelo.model.exog_names + [y_col])
+        st.session_state["prev_X_col"] = X_col
+    novos_valores = {}
+    # Coleta os novos valores do usuário
+    for col in X_col:
+        if st.session_state.df[col].dtype == 'object':
+            novos_valores[col] = st.selectbox(f"{col}", st.session_state.df[col].unique())
+        else:
+            novos_valores[col] = st.number_input(f"{col}", value=0.0)
+
+    # Quando o botão "Predição" é pressionado
+    if st.button("Predição", key="regressao_lin"):
+        # Cria um DataFrame a partir dos novos valores fornecidos
+        nova_obs = pd.DataFrame([novos_valores])
+        colunas_categoricas = nova_obs.select_dtypes(include=[object]).columns.tolist()
+        nova_obs = pd.get_dummies(nova_obs, columns=colunas_categoricas, drop_first=True)
+        nova_obs['const'] = 1
+        nova_obs = nova_obs.reindex(columns=modelo.model.exog_names)
+        # Realiza a predição
+        predicao = modelo.get_prediction(nova_obs.astype(float))
+        predicao_summary = predicao.summary_frame(alpha=0.05)  # 95% de intervalo de confiança
+        predicao1 = modelo.predict(nova_obs)[0]
+        nova_obs[y_col] = predicao1
+        st.session_state["novas_observacoes"] = pd.concat([st.session_state["novas_observacoes"], nova_obs],
+                                                          ignore_index=True)
+
+        # Exibe a predição
+        st.write(f"Previsão de {y_col}: {predicao_summary['mean'][0].round(3)}")
+        st.write(
+            f"Intervalo de Confiança (95%): [{predicao_summary['mean_ci_lower'][0].round(3)}, {predicao_summary['mean_ci_upper'][0].round(3)}]")
+        # 95% de intervalo de confiança
+        st.divider()
+    st.write("## Predição das novas observações:")
+    try:
+        st.session_state["novas_observacoes"] = st.session_state["novas_observacoes"].drop(columns=["const"])
+        st.dataframe(st.session_state["novas_observacoes"])
+    except Exception as e:
+        st.write(" ")
+
+
+@st.fragment
+def knn_pred(knn, X_col, y_col, scaler):
+    if "novas_observacoes_knn" not in st.session_state:
+        # Inicializa com as colunas de X_col e a coluna de predição
+        st.session_state["novas_observacoes_knn"] = pd.DataFrame(columns=X_col + [y_col])
+
+    # Verifica se o conjunto de preditores (X_col) mudou
+    if "prev_X_col_knn" not in st.session_state or st.session_state["prev_X_col_knn"] != X_col:
+        # Reinicializa o DataFrame de novas observações com as novas colunas
+        st.session_state["novas_observacoes_knn"] = pd.DataFrame(columns=X_col + [y_col])
+        st.session_state["prev_X_col_knn"] = X_col
+    novos_valores_knn = {}
+    # Coleta os novos valores do usuário
+    for col in X_col:
+        novos_valores_knn[col] = st.number_input(f"{col}", value=0.0)
+    if st.button("Predição", key='knn_pred'):
+        novos_valores_knn_df = pd.DataFrame([novos_valores_knn])
+        novos_valores_knn_scaled = scaler.transform(
+            novos_valores_knn_df)  # Apenas `transform` para manter a escala de treino
+        predicao_nova_obs = knn.predict(novos_valores_knn_scaled)
+        novos_valores_knn_df[y_col] = predicao_nova_obs
+        st.session_state["novas_observacoes_knn"] = pd.concat([st.session_state["novas_observacoes_knn"], novos_valores_knn_df],
+                                                          ignore_index=True)
+    st.dataframe(st.session_state["novas_observacoes_knn"])
 
 
 def manipulacao_de_dados(df):
@@ -482,6 +591,10 @@ def analise_regressao(df):
             st.divider()
             st.write("# Análise de resíduos")
             analisar_residuos(modelo, X)
+            st.write("# Predição")
+            preditos_x_reais(modelo, X, y)
+            st.divider()
+            novas_obs(modelo, X_col, y_col)
 
 def knn(df):
     st.title("K-Vizinhos mais Próximos")
@@ -574,8 +687,9 @@ def knn(df):
                 st.write(" ")
                 conf_matrix = confusion_matrix(y_test, y_pred)
                 with col2:
-                    st.divider()
                     st.write(conf_matrix)
+                st.write("# Predição")
+                knn_pred(knn, X_col, y_col, scaler)
     except Exception as e:
         st.write(e)
         st.write("## OPS! Houve alguma inconsistência...")
