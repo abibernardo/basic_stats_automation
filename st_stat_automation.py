@@ -33,139 +33,96 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
-
-def alterar_tipo(column):
-    if pd.api.types.is_numeric_dtype(st.session_state.df[column]):
-        st.write(f"**{column} é numérica*")
-    elif pd.api.types.is_categorical_dtype(st.session_state.df[column]) or pd.api.types.is_object_dtype(
-            st.session_state.df[column]):
-        st.write(f"**{column} é categórica*")
-    else:
-        tipo = st.session_state.df[column].dtypes
-        st.write(f"**{column} é do tipo {tipo}**")
-    tipos = ["-", "categórica", "numérica"]
-    novo_tipo = st.selectbox(
-        'Escolha o tipo adequado',
-        tipos)
-    if st.button("Mudar tipo da variável"):
-        try:
-            if novo_tipo == 'categórica':
-                if pd.api.types.is_categorical_dtype(st.session_state.df[column]) or pd.api.types.is_object_dtype(
-                        st.session_state.df[column]):
-                    st.write("Variável já é do tipo categórica.")
-                else:
-                    st.session_state.df[column] = st.session_state.df[column].astype(str)
-                    st.write(f'{column} alterada para categórica.')
-            elif novo_tipo == 'numérica':
-                if pd.api.types.is_numeric_dtype(st.session_state.df[column]):
-                    st.write("Variável já é do tipo numérica.")
-                else:
-                    st.session_state.df[column] = pd.to_numeric(st.session_state.df[column], errors='raise')
-                    st.write(f'{column} alterada para numérica.')
-        except Exception as e:
-            st.write("Ops! A variável não é compatível com o tipo escolhido")
-
-
-def tratar_nan(column):
-    nan_count = st.session_state.df[column].isna().sum()
-    st.write(f"Há {nan_count} valores faltantes na coluna {column}.")
-    if nan_count > 0 and pd.api.types.is_numeric_dtype(st.session_state.df[column]):
-        fillna_modos = {"Excluir linha", "Substituir por zero", "Substituir pela média"}
-        fill_na = st.selectbox(
-            'Quer usar qual técnica de preenchimento?',
-            fillna_modos)
-        if st.button("Aplicar método de preenchimento"):
-            if fill_na == "Excluir linha":
-                st.session_state.df = st.session_state.df.dropna(subset=[column])
-            if fill_na == "Substituir por zero":
-                st.session_state.df[column] = st.session_state.df[column].fillna(0)
-            if fill_na == "Substituir pela média":
-                imputer = SimpleImputer(strategy='mean')
-                st.session_state.df[column] = imputer.fit_transform(st.session_state.df[[column]])
-            st.write(f"**Dados faltantes de '{column}' preenchidos com o método '{fill_na}'!**")
-    elif nan_count > 0:
-        st.write(f"**Deseja excluir as linhas com dados faltantes em '{column}'?**")
-        if st.button("Excluir linhas NA"):
-            st.session_state.df = st.session_state.df.dropna(subset=[column])
-            st.write(f"**Linhas com dados faltantes em '{column}' excluídas!**")
-
-
-
-def limpar_filtros(filtros_aplicados):
-    if 'df_copy' in st.session_state:
-        st.session_state.df = st.session_state.df_copy.copy()
-        st.write("**Filtragem desfeita**")
-        st.write(st.session_state.df)
-        filtros_aplicados.clear()
-
-
-def visualizar_medidas(df, option):
-    for idx, c in enumerate(option):
-        try:
-            if pd.api.types.is_numeric_dtype(df[c]):
-                media = df[c].mean().round(3)
-                moda = df[c].mode().values
-                dp = df[c].std().round(3)
-                min = df[c].min().round(3)
-                max = df[c].max().round(3)
-                assimetria = df[c].skew()
-                # Calculando os quartis
-                quartis = df[c].quantile([0.25, 0.5, 0.75]).round(3)
-                quant_nan = st.session_state.df[c].isna().sum()
-                st.write(f"## Análise descritiva da variável {c}")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write("Média", media)
-                    st.write("Desvio Padrão", dp)
-                    st.write("Mínimo", min)
-                    st.write("Máximo", max)
-                with col2:
-
-                    st.write("1º Quartil", quartis.iloc[0])
-                    st.write("2º Quartil (Mediana)", quartis.iloc[1])
-                    st.write("3º Quartil", quartis.iloc[2])
-                if quant_nan:
-                    st.write(quant_nan, "dados faltantes")
-
-                st.divider()
-                st.write("**Gráfico de dispersão**")
-                st.scatter_chart(df[c])
-                st.divider()
-                st.write("**Histograma**")
-                fig = px.histogram(df, x=c)
-                st.plotly_chart(fig)
-                st.divider()
-                st.write("**Gráfico de linha**")
-                st.line_chart(df[c])
-                st.divider()
-                st.write("**Boxplot**")
-                fig = px.box(df, y=c)
-                st.plotly_chart(fig)
-            else:
-                contagem = df[c].value_counts()
-                val_unicos = df[c].nunique()
-                moda = df[c].mode().values
-                resultados_categoricos[c] = contagem
-                st.write(f"## Análise descritiva da variável {c}")
-                col5, col6 = st.columns(2)
-                with col5:
-                    st.write(contagem)
-                with col6:
-                    category_counts = df[c].value_counts().reset_index()
-                    category_counts.columns = ['Categoria', 'Contagem']
-                    fig = px.pie(category_counts, names='Categoria', values='Contagem', title=' ')
-                    fig.update_traces(textinfo=None)
-                    st.plotly_chart(fig)
-                st.write("### Contagem")
-                st.bar_chart(contagem)
-
-
-
-
+def visualizar_medidas(df, c):
+    try:
+        if pd.api.types.is_numeric_dtype(df[c]):
+            media = df[c].mean().round(3)
+            moda = df[c].mode().values
+            dp = df[c].std().round(3)
+            min = df[c].min().round(3)
+            max = df[c].max().round(3)
+            assimetria = df[c].skew()
+            # Calculando os quartis
+            quartis = df[c].quantile([0.25, 0.5, 0.75]).round(3)
+            quant_nan = st.session_state.df[c].isna().sum()
+            st.write(f"### {c}")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(
+                    f"""
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Média:</strong> {media}
+                        </div>
+                        <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Desvio Padrão:</strong> {dp}
+                        </div>
+                        <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Mínimo:</strong> {min}
+                        </div>
+                        <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Máximo:</strong> {max}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            with col2:
+                st.markdown(
+                    f"""
+                                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                                    <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
+                                        <strong>1º Quartil:</strong> {quartis.iloc[0]}
+                                    </div>
+                                    <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
+                                        <strong>Mediana:</strong> {quartis.iloc[1]}
+                                    </div>
+                                    <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
+                                        <strong>3º Quartil:</strong> {quartis.iloc[2]}
+                                    </div>
+                                    <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
+                                        <strong>Faltantes:</strong> {quant_nan}
+                                    </div>
+                                </div>
+                                """,
+                    unsafe_allow_html=True
+                )
             st.divider()
-        except Exception as ex:
-            st.write("Ops, houve algum erro. Verifique a formatação da sua planilha")
+            st.write("**Gráfico de dispersão**")
+            st.scatter_chart(df[c])
+            st.divider()
+            st.write("**Histograma**")
+            fig = px.histogram(df, x=c)
+            st.plotly_chart(fig)
+            st.divider()
+            st.write("**Gráfico de linha**")
+            st.line_chart(df[c])
+            st.divider()
+            st.write("**Boxplot**")
+            fig = px.box(df, y=c)
+            st.plotly_chart(fig)
+        else:
+            contagem = df[c].value_counts()
+            val_unicos = df[c].nunique()
+            moda = df[c].mode().values
+            resultados_categoricos[c] = contagem
+            st.write(f"## Análise descritiva da variável {c}")
+            col5, col6 = st.columns(2)
+            with col5:
+                st.write(contagem)
+            with col6:
+                category_counts = df[c].value_counts().reset_index()
+                category_counts.columns = ['Categoria', 'Contagem']
+                fig = px.pie(category_counts, names='Categoria', values='Contagem', title=' ')
+                fig.update_traces(textinfo=None)
+                st.plotly_chart(fig)
+            st.write("### Contagem")
+            st.bar_chart(contagem)
+            st.divider()
+    except Exception as ex:
+        st.write("Ops, houve algum erro. Verifique a formatação da sua planilha")
 
+@st.fragment
 def visualizar_relacoes(df, var_numericas):
     df = df[var_numericas]
     st.write("**Gráfico de dispersão**")
@@ -174,18 +131,11 @@ def visualizar_relacoes(df, var_numericas):
     st.write("**Histograma**")
     fig = px.histogram(df)
     st.plotly_chart(fig)
-    try:
-        group_labels = df.columns.tolist()  # Obter rótulos das colunas
-        hist_data = [df[col].dropna().tolist() for col in df.columns]
-        fig = ff.create_distplot(
-            hist_data, group_labels, bin_size=[.1, .25, .5])
-        st.plotly_chart(fig)
-    except Exception as e:
-        st.write(" ")
     st.divider()
     st.write("**Gráfico de linhas**")
     st.line_chart(df)
 
+@st.fragment
 def boxplots(df, colunas_categoricas, colunas_numericas):
     variavel_categorica_boxplot = st.selectbox('Categoria por boxplot', colunas_categoricas, key='key11')
     variavel_numerica_boxplot = st.selectbox('Variável de interesse', colunas_numericas)
@@ -193,13 +143,15 @@ def boxplots(df, colunas_categoricas, colunas_numericas):
     if st.button("Visualizar", key='boxp'):
         fig = px.box(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot, title=" ")
         st.plotly_chart(fig)
-        if variavel_categorica_boxplot != variavel_divisora_boxplot:
+        if variavel_categorica_boxplot and variavel_categorica_boxplot != variavel_divisora_boxplot:
             st.divider()
             fig = px.box(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot,
                          color=variavel_divisora_boxplot)
             fig.update_traces(quartilemethod="linear")
             st.plotly_chart(fig)
 
+
+@st.fragment
 def correlacao(df, variaveis_corr):
     df_numeric = df[variaveis_corr]
     corr = df_numeric.corr()
@@ -227,6 +179,7 @@ def correlacao(df, variaveis_corr):
     fig = px.scatter_matrix(df_numeric)
     st.plotly_chart(fig)
 
+@st.fragment
 def graficos_dispersao(df, x_dc, y_dc, cor, tamanho):
     st.divider()
     st.write(f"{x_dc} x {y_dc}")
@@ -421,55 +374,12 @@ def knn_pred(knn, X_col, y_col, scaler):
         novos_valores_knn_df[y_col] = predicao_nova_obs
         st.session_state["novas_observacoes_knn"] = pd.concat([st.session_state["novas_observacoes_knn"], novos_valores_knn_df],
                                                           ignore_index=True)
-    st.dataframe(st.session_state["novas_observacoes_knn"])
+    try:
+        st.dataframe(st.session_state["novas_observacoes_knn"])
+    except Exception as e:
+        st.write(" ")
 
 
-def manipulacao_de_dados(df):
-    st.data_editor(df)
-    st.divider()
-    column_names = st.session_state.df.columns
-    tratamentos = ["Valores faltantes", "Alterar tipos", "Filtragem de dados"]
-    st.write("## Deseja fazer que tipo de tratamento?")
-    tratamento = st.radio(
-        " ",
-        tratamentos,
-    )
-    st.divider()
-
-    if tratamento == "Alterar tipos":
-        column = st.selectbox(
-            'Quer verificar o tipo de qual coluna?',
-            column_names)
-        alterar_tipo(column)
-
-    if tratamento == "Valores faltantes":
-        column = st.selectbox(
-            'Quer verificar valores faltantes de qual coluna?',
-            column_names)
-        tratar_nan(column)
-
-    if tratamento == "Filtragem de dados":
-        filtragem = st.selectbox(
-            'Por qual variável quer filtrar?',
-            column_names)
-        filtros_aplicados = st.session_state.get('filtros_aplicados', [])
-
-        valor = st.session_state.df[filtragem].unique()
-        valor_coluna = st.multiselect("Por quais valores deseja filtrar?", valor)
-        if st.button("Aplicar filtro", key='botao1'):
-        # Armazene uma cópia original do DataFrame, se ainda não tiver feito isso
-            if 'df_copy' not in st.session_state:
-                st.session_state.df_copy = st.session_state.df.copy()
-            st.session_state.df = st.session_state.df[st.session_state.df[filtragem].isin(valor_coluna)]
-            st.write(st.session_state.df)
-            st.write("Para desativar filtros, clique em **'resetar filtro'**")
-            # Adiciona a variável filtrada na lista de filtros aplicados
-            if filtragem not in filtros_aplicados:
-                filtros_aplicados.append(filtragem)
-            st.session_state.filtros_aplicados = filtros_aplicados
-        if len(filtros_aplicados) > 0:
-            if st.button("Resetar filtro", key='botao2'):
-                limpar_filtros(filtros_aplicados)
 
 # @st.fragment
 def analise_descritiva(df):
@@ -485,13 +395,14 @@ def analise_descritiva(df):
         ],
     )
     column_names = df.columns
+    col1, col2 = st.columns(2)
     if visualisar == "Descrição das variáveis":
-        st.write("## Quais variáveis quer analisar?")
-        option = st.multiselect(
-            ' ',
-            column_names, key='descritiva')
-        if st.button("Visualizar", key='desc'):
-            visualizar_medidas(df, option)
+        with col1:
+            st.divider()
+            option = st.selectbox(
+                'Qual variável quer analisar?',
+                column_names, key='descritiva')
+        visualizar_medidas(df, option)
 
     if visualisar == "Relação entre variáveis":
         colunas_categoricas = df.select_dtypes(include=['object', 'category']).columns.tolist()
@@ -719,12 +630,8 @@ def present_excel(excel_path):
 
     # Verifica se 'df' foi atribuído com sucesso antes de acessar as opções do ticker
     if 'df' in st.session_state:
-        if ticker == "Manipulação de dados":
-            st.title("**Manipulação de dados**")
-            manipulacao_de_dados(st.session_state.df)
-
-        elif ticker == "Análise descritiva":
-            st.title("**Análise descritiva**")
+        if ticker == "Análise exploratória":
+            st.title("**Análise exploratória**")
             analise_descritiva(st.session_state.df)
 
         elif ticker == "Modelo de regressão":
@@ -740,34 +647,10 @@ resultados_categoricos = {}
 
 st.sidebar.subheader("Escolha a análise que deseja realizar")
 
-secs = ["Apresentação", "Manipulação de dados", "Análise descritiva", "Modelo de regressão", "Modelo de classificação"]
+secs = ["Análise exploratória", "Modelo de regressão", "Modelo de classificação"]
 tickers = secs
 ticker = st.sidebar.selectbox("Seções", tickers)
-if ticker == "Apresentação":
-    st.title("ESTATÍSTICA BÁSICA SEMI AUTOMATIZADA")
-    st.divider()
-    st.title("Olá!!!")
 
-    st.markdown("""
-    Esta aplicação foi criada com o propósito de simplificar análises estatísticas básicas, de modo a auxiliar que estudantes/pesquisadores das ciências humanas que não possuem familiaridade com linguagens de programação, possam visualizar seus dados sem terem que recorrer a softwares.
-    """)
-
-    st.header("Orientações:")
-    st.markdown("""
-    Antes de ir para as seções de análises estatísticas, faça o tratamento da sua planilha na seção **"Manipulação de dados"**. Lá, você poderá fazer as devidas alterações para que todas as outras etapas ocorram sem erros. Caso a aplicação dê resultados incoerentes, retorne a essa etapa para verificar aonde está o problema.
-    *Por exemplo: se receber um gráfico que não faça sentido, verifique se sua variável é do tipo adequado no item **"Tipo"**, dentro de **"Manipulação de dados"**.* Caso deseje alterar o conjunto de dados, *recarregue o site*.
-    """)
-
-    st.markdown("""
-    Abaixo, deixo um vídeo-tutorial das funcionalidades da aplicação até o momento.
-    """)
-    youtube_url = 'https://youtu.be/RZuPcBPNt_M'
-    url = 'https://raw.githubusercontent.com/abibernardo/basic_stats_automation/main/dados_bsa.xlsx'
-    st.video(youtube_url)
-    st.markdown("""
-    Em caso de dúvidas, contate: [bernardoabib1@gmail.com](mailto:bernardoabib1@gmail.com)
-    """)
-    st.divider()
 
 excel_path = st.file_uploader("Escolha um conjunto de dados para analisar", type=["xlsx", "xls", "csv"])
 if excel_path is not None:
