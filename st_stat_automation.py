@@ -446,6 +446,7 @@ def analise_regressao(df):
 
     if st.button("Modelar!", key='reglin'):
         if y_col and X_col:
+            st.session_state.df = st.session_state.df.dropna()
             X_1 = st.session_state.df[X_col]
             colunas_categoricas = X_1.select_dtypes(include=[object]).columns.tolist()
             X = pd.get_dummies(X_1, columns=colunas_categoricas, drop_first=True)
@@ -510,6 +511,7 @@ def analise_regressao(df):
 def knn(df):
     st.title("K-Vizinhos mais Próximos")
     try:
+        st.session_state.df = st.session_state.df.dropna()
         colunas_categoricas = df.select_dtypes(include=['object', 'category']).columns.tolist()
         colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
         y_col = st.selectbox('Selecione a variável resposta (Y)', colunas_categoricas)
