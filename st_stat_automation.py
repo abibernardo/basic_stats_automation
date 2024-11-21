@@ -123,48 +123,17 @@ def visualizar_medidas(df, c):
         st.write("Ops, houve algum erro. Verifique a formatação da sua planilha")
 
 @st.fragment
-def visualizar_relacoes(df, x, y, cor, tamanho):
-    if x not in '-' and y not in '-':
-        if cor in '-' and tamanho in '-':
-            st.scatter_chart(df, x=x, y=y)
-        if cor not in '-' and tamanho in '-':
-            fig = px.scatter(
-                df,
-                x=x,
-                y=y,
-                color=cor,
-                color_continuous_scale="reds",
-            )
-            if fig:
-                st.plotly_chart(fig, theme="streamlit", use_container_width=True)
-        if cor in '-' and tamanho not in '-':
-            fig = px.scatter(
-                df,
-                x=x,
-                y=y,
-                size=tamanho,
-                hover_data=None,
-            )
-            if fig:
-                st.plotly_chart(fig, key="ia", on_select="rerun")
-        if cor not in '-' and tamanho not in '-':
-            fig = px.scatter(
-                df,
-                x=x,
-                y=y,
-                color=cor,
-                size=tamanho,
-                hover_data=None,
-            )
-            if fig:
-                st.plotly_chart(fig, key="iis", on_select="rerun")
-        if cor in '-':
-            st.line_chart(df, x=x, y=y)
-        else:
-            st.line_chart(df, x=x, y=y, color=cor)
-    else:
-        st.write("Selecione as variáveis de interesse.")
-
+def visualizar_relacoes(df, var_numericas):
+    df = df[var_numericas]
+    st.write("**Gráfico de dispersão**")
+    st.scatter_chart(df)
+    st.divider()
+    st.write("**Histograma**")
+    fig = px.histogram(df)
+    st.plotly_chart(fig)
+    st.divider()
+    st.write("**Gráfico de linhas**")
+    st.line_chart(df)
 
 @st.fragment
 def boxplots(df, colunas_categoricas, colunas_numericas):
@@ -210,6 +179,58 @@ def correlacao(df, variaveis_corr):
     fig = px.scatter_matrix(df_numeric)
     st.plotly_chart(fig)
 
+@st.fragment
+def graficos_dispersao(df, x_dc, y_dc, cor, tamanho):
+    st.divider()
+    st.write(f"{x_dc} x {y_dc}")
+    col20, col21 = st.columns(2)
+    with col20:
+        fig = px.scatter(df, x=x_dc, y=y_dc)
+        st.plotly_chart(fig, key="simples", on_select="rerun")
+    with col21:
+        fig = px.scatter(df, x=x_dc, y=y_dc, trendline="ols")
+        fig.update_traces(selector=dict(type='scatter', mode='lines'),
+                          line=dict(color='red', width=4))
+        st.plotly_chart(fig, key="simpless", on_select="rerun")
+    st.divider()
+    st.write(f"{x_dc} x {y_dc} dividido por {cor}")
+    fig = px.scatter(
+        df,
+        x=x_dc,
+        y=y_dc,
+        color=cor,
+        color_continuous_scale="reds",
+    )
+    st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+    st.divider()
+    st.write(f"{x_dc} x {y_dc} dividido por {cor}")
+    fig = px.scatter(df, x=x_dc, y=y_dc, color=cor, marginal_x="rug", marginal_y="violin")
+    st.plotly_chart(fig)
+    fig = px.scatter(df, x=x_dc, y=y_dc, color = cor, marginal_y="histogram", marginal_x="box", trendline="ols", template="simple_white")
+    st.plotly_chart(fig)
+    st.divider()
+    st.write(f"{x_dc} x {y_dc} por escala de cor em {tamanho}")
+    fig = px.scatter(
+        df,
+        x=x_dc,
+        y=y_dc,
+        color=tamanho,
+        color_continuous_scale="reds",
+    )
+    st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+    st.divider()
+    st.write(f"{x_dc} x {y_dc} dividido por cor em {cor} e tamanho em {tamanho}")
+    fig = px.scatter(
+        df,
+        x=x_dc,
+        y=y_dc,
+        color=cor,
+        size=tamanho,
+        hover_data=None,
+    )
+
+
+    st.plotly_chart(fig, key="iris", on_select="rerun")
 
 
 def analisar_residuos(modelo, X):
@@ -364,7 +385,6 @@ def knn_pred(knn, X_col, y_col, scaler):
 def analise_descritiva(df):
     st.divider()
     st.dataframe(df, width=900)
-    st.divider()
     st.write("### O que quer visualizar?")
     visualisar = st.radio(
         " ",
@@ -374,13 +394,11 @@ def analise_descritiva(df):
             "Gráficos relacionando variáveis",
         ],
     )
-    st.divider()
     column_names = df.columns
-    colunas = column_names.tolist()
-    colunas.append('-')
     col1, col2 = st.columns(2)
     if visualisar == "Descrição das variáveis":
         with col1:
+            st.divider()
             option = st.selectbox(
                 'Qual variável quer analisar?',
                 column_names, key='descritiva')
@@ -389,17 +407,10 @@ def analise_descritiva(df):
     if visualisar == "Relação entre variáveis":
         colunas_categoricas = df.select_dtypes(include=['object', 'category']).columns.tolist()
         colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
-        colunas_numericas.append('-')
-        colunas_categoricas.append('-')
-        st.write("**Para deixar um campo vazio, selecione ' - '**")
-        st.divider()
-        with col1:
-            x = st.selectbox('eixo x', colunas_numericas)
-            y = st.selectbox('eixo y', colunas_numericas)
-        with col2:
-            cor = st.selectbox('Divisão por cor', colunas)
-            tamanho = st.selectbox('Divisão por tamanho', colunas_numericas)
-        visualizar_relacoes(df, x, y, cor, tamanho)
+        st.write("## Análises de variáveis numéricas")
+        var_numericas = st.multiselect('Variáveis numéricas de interesse', colunas_numericas)
+        if st.button("Visualizar", key='numericas'):
+            visualizar_relacoes(df, var_numericas)
         st.divider()
 
         st.write("## Boxplots por categoria")
@@ -413,6 +424,15 @@ def analise_descritiva(df):
             correlacao(df, variaveis_corr)
         st.divider()
 
+        st.write("## Gráficos de dispersão mais avançados")
+
+        x_dc = st.selectbox('Variável X', colunas_numericas)
+        y_dc = st.selectbox('Variável Y', colunas_numericas)
+        cor = st.selectbox('Variável categórica divisora:', colunas_categoricas)
+        tamanho = st.selectbox('Variável numérica divisora:', colunas_numericas)
+        st.divider()
+        if st.button("Visualizar", key='disper'):
+            graficos_dispersao(df, x_dc, y_dc, cor, tamanho)
 
 
 
