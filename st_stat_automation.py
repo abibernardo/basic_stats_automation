@@ -391,11 +391,12 @@ def analise_descritiva(df):
         colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
         colunas_numericas.append('-')
         colunas_categoricas.append('-')
+        st.write("**Para deixar um campo vazio, selecione ' - '**")
         st.divider()
         with col1:
-            st.write("Para deixar um campo vazio, selecione '-'")
             x = st.selectbox('eixo x', colunas_numericas)
             y = st.selectbox('eixo y', colunas_numericas)
+        with col2:
             cor = st.selectbox('Divisão por cor', colunas)
             tamanho = st.selectbox('Divisão por tamanho', colunas_numericas)
         visualizar_relacoes(df, x, y, cor, tamanho)
