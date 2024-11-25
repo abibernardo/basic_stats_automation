@@ -158,58 +158,91 @@ def visualizar_relacoes(df, x, y, cor, tamanho):
             )
             if fig:
                 st.plotly_chart(fig, key="iis", on_select="rerun")
-        if cor in '-':
-            st.line_chart(df, x=x, y=y)
-        else:
-            st.line_chart(df, x=x, y=y, color=cor)
     else:
         st.write("Selecione as variáveis de interesse.")
+
+@st.fragment
+def barras(df, colunas_categoricas, colunas_numericas):
+    col11, col22 = st.columns(2)
+    with col11:
+        default_ix = colunas_categoricas.index('-')
+        variavel_numerica_bar = st.selectbox('Variável de interesse', colunas_numericas, key='s')
+        variavel_divisora_bar = st.selectbox('Categoria dividora', colunas_categoricas, key='bar222')
+    with col22:
+        subcategoria = st.selectbox('Categoria divisora por cor (opcional)', colunas_categoricas, index = default_ix, key='bar22')
+    if variavel_numerica_bar not in '-' and variavel_divisora_bar not in '-' and subcategoria in '-':
+        fig = px.histogram(df, y=variavel_numerica_bar, x=variavel_divisora_bar)
+        st.plotly_chart(fig)
+    elif variavel_numerica_bar not in '-' and variavel_divisora_bar not in '-' and subcategoria not in '-':
+        fig = px.histogram(
+            df,
+            x=variavel_divisora_bar,
+            y=variavel_numerica_bar,
+            color=subcategoria,  # Variável categórica para separação de cores
+            barmode='group',  # Exibe barras agrupadas
+        )
+        st.plotly_chart(fig)
+
+
 
 
 @st.fragment
 def boxplots(df, colunas_categoricas, colunas_numericas):
-    variavel_categorica_boxplot = st.selectbox('Categoria por boxplot', colunas_categoricas, key='key11')
-    variavel_numerica_boxplot = st.selectbox('Variável de interesse', colunas_numericas)
-    variavel_divisora_boxplot = st.selectbox('Categoria divisora por cor (opcional)', colunas_categoricas, key='keyy22')
-    if st.button("Visualizar", key='boxp'):
+    col11, col22 = st.columns(2)
+    with col11:
+        variavel_categorica_boxplot = st.selectbox('Categoria por boxplot', colunas_categoricas, key='key11')
+        variavel_numerica_boxplot = st.selectbox('Variável de interesse', colunas_numericas)
+    with col22:
+        default_ix = colunas_categoricas.index('-')
+        variavel_divisora_boxplot = st.selectbox('Categoria divisora por cor (opcional)', colunas_categoricas, index = default_ix, key='keyy22')
+    if variavel_categorica_boxplot not in '-' and variavel_numerica_boxplot not in '-' and variavel_divisora_boxplot in '-':
         fig = px.box(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot, title=" ")
         st.plotly_chart(fig)
-        if variavel_categorica_boxplot and variavel_categorica_boxplot != variavel_divisora_boxplot:
-            st.divider()
+    elif variavel_categorica_boxplot not in '-' and variavel_numerica_boxplot not in '-' and variavel_divisora_boxplot not in '-':
             fig = px.box(df, x=variavel_categorica_boxplot, y=variavel_numerica_boxplot,
                          color=variavel_divisora_boxplot)
             fig.update_traces(quartilemethod="linear")
             st.plotly_chart(fig)
 
+@st.fragment
+def linhas(df, colunas_categoricas, colunas_numericas):
+    col11, col22 = st.columns(2)
+    with col11:
+        variavel_x = st.selectbox('Eixo x', colunas_numericas, key='hsbx11')
+        variavel_y = st.selectbox('Eixo y', colunas_numericas, key='rsuua')
+    with col22:
+        default_ix = colunas_categoricas.index('-')
+        variavel_cor = st.selectbox('Categoria divisora por cor (opcional)', colunas_categoricas,
+                                                 index=default_ix, key='ifr4h')
+    if variavel_x not in '-' and variavel_y not in '-' and variavel_cor not in '-':
+        try:
+            df1 = df.sort_values(by=variavel_x)
+            fig = px.line(df1, x=variavel_x, y=variavel_y, color=variavel_cor)
+            st.plotly_chart(fig)
+        except Exception as e:
+            st.write("Selecione variáveis válidas.")
+    elif variavel_x not in '-' and variavel_y not in '-' and variavel_cor in '-':
+        df1 = df.sort_values(by=variavel_x)
+        fig = px.line(df1, x=variavel_x, y=variavel_y)
+        st.plotly_chart(fig)
+
 
 @st.fragment
-def correlacao(df, variaveis_corr):
+def pairplor(df, variaveis_corr, cor_pp):
     df_numeric = df[variaveis_corr]
     corr = df_numeric.corr()
-    fig = px.imshow(
-        corr,
-        text_auto=True,  # Exibe os valores das correlações automaticamente
-        aspect="auto",  # Ajusta o aspecto para que cada célula seja quadrada
-        color_continuous_scale=px.colors.diverging.RdBu,  # Paleta de cores divergente
-        color_continuous_midpoint=0,  # Centraliza as cores em torno de 0
-        title='Matriz de Correlação'  # Título do gráfico
-    )
-
-    # Ajustar o tamanho da figura
-    fig.update_layout(
-        width=800,  # Largura do gráfico
-        height=600,  # Altura do gráfico
-        margin=dict(l=60, r=60, t=60, b=60)  # Margens para ajustar espaçamento
-    )
-
-    # Atualizar os eixos para melhorar a leitura
-    fig.update_xaxes(side="bottom", tickangle=-45, tickfont=dict(size=10))
-    fig.update_yaxes(tickfont=dict(size=10))
-    st.plotly_chart(fig)
-    st.write("**Pair Plot**")
-    fig = px.scatter_matrix(df_numeric)
-    st.plotly_chart(fig)
-
+    if cor_pp not in '-':
+        try:
+            fig = px.scatter_matrix(df, dimensions=variaveis_corr, color=cor_pp)
+            st.plotly_chart(fig)
+        except Exception as e:
+            st.write("Selecione variáveis válidas.")
+    else:
+        try:
+            fig = px.scatter_matrix(df_numeric, dimensions=variaveis_corr)
+            st.plotly_chart(fig)
+        except Exception as e:
+            st.write("Selecione variáveis válidas.")
 
 
 def analisar_residuos(modelo, X):
@@ -387,18 +420,27 @@ def analise_descritiva(df):
         visualizar_medidas(df, option)
 
     if visualisar == "Relação entre variáveis":
-        colunas_categoricas = df.select_dtypes(include=['object', 'category']).columns.tolist()
-        colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
+        colunas_categoricas = df.select_dtypes(include=[object, 'category', 'datetime']).columns.tolist()
+        colunas_numericas = df.select_dtypes(include=[np.number, 'datetime']).columns.tolist()
         colunas_numericas.append('-')
         colunas_categoricas.append('-')
-        st.write("**Para deixar um campo vazio, selecione ' - '**")
+        default_ix = colunas_numericas.index('-')
+        default_ix2 = colunas_categoricas.index('-')
+        default_ix3 = colunas_categoricas.index('-')
+
+        st.write("## Gráfico de barras")
+        barras(df, colunas_categoricas, colunas_numericas)
         st.divider()
-        with col1:
+
+        st.write("## Gráfico de dispersão customizável")
+        col15, col25 = st.columns(2)
+        with col15:
             x = st.selectbox('eixo x', colunas_numericas)
             y = st.selectbox('eixo y', colunas_numericas)
-        with col2:
-            cor = st.selectbox('Divisão por cor', colunas)
-            tamanho = st.selectbox('Divisão por tamanho', colunas_numericas)
+        with col25:
+            cor = st.selectbox('Divisão por cor', colunas, index = default_ix3)
+            tamanho = st.selectbox('Divisão por tamanho', colunas_numericas, index = default_ix)
+            st.write("**Para deixar um campo vazio, selecione ' - '**")
         visualizar_relacoes(df, x, y, cor, tamanho)
         st.divider()
 
@@ -406,11 +448,20 @@ def analise_descritiva(df):
         boxplots(df, colunas_categoricas, colunas_numericas)
         st.divider()
 
-        st.write("## Matriz de correlação")
-        variaveis_corr = st.multiselect(' ', colunas_numericas)
+        st.write("## Gráfico de linhas")
+        linhas(df, colunas_categoricas, colunas_numericas)
+        st.divider()
 
-        if st.button("Visualizar", key='corr'):
-            correlacao(df, variaveis_corr)
+        st.write("## Gráfico de pares")
+        col9, col99 = st.columns(2)
+        with col9:
+            variaveis_corr = st.multiselect('Variáveis de interesse', colunas_numericas)
+        with col99:
+            cor_pp = st.selectbox('divisão por cor', colunas_categoricas, index=default_ix2)
+            st.write("**Para deixar o campo vazio, selecione ' - '**")
+        if st.button('Gerar!'):
+            if '-' not in variaveis_corr:
+                pairplor(df, variaveis_corr, cor_pp)
         st.divider()
 
 
