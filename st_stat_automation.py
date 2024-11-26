@@ -88,25 +88,14 @@ def visualizar_medidas(df, c):
                     unsafe_allow_html=True
                 )
             st.divider()
-            st.write("**Gráfico de dispersão**")
-            st.scatter_chart(df[c])
-            st.divider()
-            st.write("**Histograma**")
             fig = px.histogram(df, x=c)
             st.plotly_chart(fig)
             st.divider()
-            st.write("**Gráfico de linha**")
-            st.line_chart(df[c])
-            st.divider()
-            st.write("**Boxplot**")
-            fig = px.box(df, y=c)
-            st.plotly_chart(fig)
         else:
             contagem = df[c].value_counts()
             val_unicos = df[c].nunique()
             moda = df[c].mode().values
             resultados_categoricos[c] = contagem
-            st.write(f"## Análise descritiva da variável {c}")
             col5, col6 = st.columns(2)
             with col5:
                 st.write(contagem)
@@ -398,71 +387,59 @@ def analise_descritiva(df):
     st.divider()
     st.dataframe(df, width=900)
     st.divider()
-    st.write("### O que quer visualizar?")
-    visualisar = st.radio(
-        " ",
-        ["Descrição das variáveis", "Relação entre variáveis"],
-        captions=[
-            "Medidas estatísticas e distribuição",
-            "Gráficos relacionando variáveis",
-        ],
-    )
-    st.divider()
     column_names = df.columns
     colunas = column_names.tolist()
     colunas.append('-')
+    st.write(f"## Análise Descritiva")
     col1, col2 = st.columns(2)
-    if visualisar == "Descrição das variáveis":
-        with col1:
-            option = st.selectbox(
-                'Qual variável quer analisar?',
-                column_names, key='descritiva')
-        visualizar_medidas(df, option)
+    with col1:
+        option = st.selectbox(
+            'Qual variável quer analisar?',
+            column_names, key='descritiva')
+    visualizar_medidas(df, option)
+    colunas_categoricas = df.select_dtypes(include=[object, 'category', 'datetime']).columns.tolist()
+    colunas_numericas = df.select_dtypes(include=[np.number, 'datetime']).columns.tolist()
+    colunas_numericas.append('-')
+    colunas_categoricas.append('-')
+    default_ix = colunas_numericas.index('-')
+    default_ix2 = colunas_categoricas.index('-')
+    default_ix3 = colunas_categoricas.index('-')
 
-    if visualisar == "Relação entre variáveis":
-        colunas_categoricas = df.select_dtypes(include=[object, 'category', 'datetime']).columns.tolist()
-        colunas_numericas = df.select_dtypes(include=[np.number, 'datetime']).columns.tolist()
-        colunas_numericas.append('-')
-        colunas_categoricas.append('-')
-        default_ix = colunas_numericas.index('-')
-        default_ix2 = colunas_categoricas.index('-')
-        default_ix3 = colunas_categoricas.index('-')
+    st.write("## Gráfico de barras")
+    barras(df, colunas_categoricas, colunas_numericas)
+    st.divider()
 
-        st.write("## Gráfico de barras")
-        barras(df, colunas_categoricas, colunas_numericas)
-        st.divider()
+    st.write("## Gráfico de dispersão customizável")
+    col15, col25 = st.columns(2)
+    with col15:
+        x = st.selectbox('eixo x', colunas_numericas)
+        y = st.selectbox('eixo y', colunas_numericas)
+    with col25:
+        cor = st.selectbox('Divisão por cor', colunas, index = default_ix3)
+        tamanho = st.selectbox('Divisão por tamanho', colunas_numericas, index = default_ix)
+        st.write("**Para deixar um campo vazio, selecione ' - '**")
+    visualizar_relacoes(df, x, y, cor, tamanho)
+    st.divider()
 
-        st.write("## Gráfico de dispersão customizável")
-        col15, col25 = st.columns(2)
-        with col15:
-            x = st.selectbox('eixo x', colunas_numericas)
-            y = st.selectbox('eixo y', colunas_numericas)
-        with col25:
-            cor = st.selectbox('Divisão por cor', colunas, index = default_ix3)
-            tamanho = st.selectbox('Divisão por tamanho', colunas_numericas, index = default_ix)
-            st.write("**Para deixar um campo vazio, selecione ' - '**")
-        visualizar_relacoes(df, x, y, cor, tamanho)
-        st.divider()
+    st.write("## Boxplots por categoria")
+    boxplots(df, colunas_categoricas, colunas_numericas)
+    st.divider()
 
-        st.write("## Boxplots por categoria")
-        boxplots(df, colunas_categoricas, colunas_numericas)
-        st.divider()
+    st.write("## Gráfico de linhas")
+    linhas(df, colunas_categoricas, colunas_numericas)
+    st.divider()
 
-        st.write("## Gráfico de linhas")
-        linhas(df, colunas_categoricas, colunas_numericas)
-        st.divider()
-
-        st.write("## Gráfico de pares")
-        col9, col99 = st.columns(2)
-        with col9:
-            variaveis_corr = st.multiselect('Variáveis de interesse', colunas_numericas)
-        with col99:
-            cor_pp = st.selectbox('divisão por cor', colunas_categoricas, index=default_ix2)
-            st.write("**Para deixar o campo vazio, selecione ' - '**")
-        if st.button('Gerar!'):
-            if '-' not in variaveis_corr:
-                pairplor(df, variaveis_corr, cor_pp)
-        st.divider()
+    st.write("## Gráfico de pares")
+    col9, col99 = st.columns(2)
+    with col9:
+        variaveis_corr = st.multiselect('Variáveis de interesse', colunas_numericas)
+    with col99:
+        cor_pp = st.selectbox('divisão por cor', colunas_categoricas, index=default_ix2)
+        st.write("**Para deixar o campo vazio, selecione ' - '**")
+    if st.button('Gerar!'):
+        if '-' not in variaveis_corr:
+            pairplor(df, variaveis_corr, cor_pp)
+    st.divider()
 
 
 
