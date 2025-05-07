@@ -664,7 +664,7 @@ resultados_categoricos = {}
 
 st.sidebar.subheader("Escolha a análise que deseja realizar")
 
-secs = ["Análise exploratória", "Modelo de regressão", "Modelo de classificação"]
+secs = ["Análise exploratória", "Seção de modelagem está em manutenção :)"] # "Modelo de regressão", "Modelo de classificação"
 tickers = secs
 ticker = st.sidebar.selectbox("Seções", tickers)
 
