@@ -235,42 +235,38 @@ def analise_exploratoria(df):
     default_ix = colunas_numericas.index('-')
     default_ix2 = colunas_categoricas.index('-')
     default_ix3 = colunas_categoricas.index('-')
-
-    st.write("## Gráfico de barras")
-    barras(df, colunas_categoricas, colunas_numericas)
-    st.divider()
-
-    st.write("## Gráfico de dispersão customizável")
-    col15, col25 = st.columns(2)
-    with col15:
-        x = st.selectbox('eixo x', colunas_numericas)
-        y = st.selectbox('eixo y', colunas_numericas)
-    with col25:
-        cor = st.selectbox('Divisão por cor', colunas, index = default_ix3)
-        tamanho = st.selectbox('Divisão por tamanho', colunas_numericas, index = default_ix)
-        st.write("**Para deixar um campo vazio, selecione ' - '**")
-    visualizar_relacoes(df, x, y, cor, tamanho)
-    st.divider()
-
-    st.write("## Boxplots por categoria")
-    boxplots(df, colunas_categoricas, colunas_numericas)
-    st.divider()
-
-    st.write("## Gráfico de linhas")
-    linhas(df, colunas_categoricas, colunas_numericas)
-    st.divider()
-
-    st.write("## Gráfico de pares")
-    col9, col99 = st.columns(2)
-    with col9:
-        variaveis_corr = st.multiselect('Variáveis de interesse', colunas_numericas)
-    with col99:
-        cor_pp = st.selectbox('divisão por cor', colunas_categoricas, index=default_ix2)
-        st.write("**Para deixar o campo vazio, selecione ' - '**")
-    if st.button('Gerar!'):
-        if '-' not in variaveis_corr:
-            pairplor(df, variaveis_corr, cor_pp)
-    st.divider()
+    grafico = st.radio("Que tipo de gráfico deseja construir?", ["Barras", "Dispersão", "Boxplot", "Linha", "Pares"], horizontal=True)
+    if grafico == "Barras":
+        barras(df, colunas_categoricas, colunas_numericas)
+        st.divider()
+    if grafico == "Dispersão":
+        col15, col25 = st.columns(2)
+        with col15:
+            x = st.selectbox('eixo x', colunas_numericas)
+            y = st.selectbox('eixo y', colunas_numericas)
+        with col25:
+            cor = st.selectbox('Divisão por cor', colunas, index = default_ix3)
+            tamanho = st.selectbox('Divisão por tamanho', colunas_numericas, index = default_ix)
+            st.write("**Para deixar um campo vazio, selecione ' - '**")
+        visualizar_relacoes(df, x, y, cor, tamanho)
+        st.divider()
+    if grafico == "Boxplot":
+        boxplots(df, colunas_categoricas, colunas_numericas)
+        st.divider()
+    if grafico == "Linha":
+        linhas(df, colunas_categoricas, colunas_numericas)
+        st.divider()
+    if grafico == "Pares":
+        col9, col99 = st.columns(2)
+        with col9:
+            variaveis_corr = st.multiselect('Variáveis de interesse', colunas_numericas)
+        with col99:
+            cor_pp = st.selectbox('divisão por cor', colunas_categoricas, index=default_ix2)
+            st.write("**Para deixar o campo vazio, selecione ' - '**")
+        if st.button('Gerar!'):
+            if '-' not in variaveis_corr:
+                pairplor(df, variaveis_corr, cor_pp)
+        st.divider()
 
 
 
