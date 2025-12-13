@@ -50,15 +50,14 @@ def present_file(uploaded_file):
 # === Uso no Streamlit ===
 
 
-# Só roda a análise se o df já existir no session_state
-secs = ["Análise descritiva", "Análise exploratória"]
-tickers = secs
+
 uploaded = st.sidebar.file_uploader(" ",
     type=["xlsx", "xls", "csv"])
-ticker = st.sidebar.selectbox("Seções", tickers)
+
 
 if uploaded is not None:
     present_file(uploaded)
+
 
 
 
