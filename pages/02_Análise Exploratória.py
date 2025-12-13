@@ -24,57 +24,18 @@ def visualizar_medidas(df, c):
             with col1:
                 st.markdown(
                     f"""
-                    <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-                        <div style="
-                            background-color: #F5F6F7;
-                            color: #222;
-                            padding: 14px;
-                            border-radius: 10px;
-                            border: 1px solid #D0D3D6;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                            text-align: center;
-                            min-width: 130px;
-                        ">
-                            <strong>Média</strong><br>{media}
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <div style="background-color: #E9ECEF; color: #212529; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Média:</strong> {media}
                         </div>
-
-                        <div style="
-                            background-color: #F5F6F7;
-                            color: #222;
-                            padding: 14px;
-                            border-radius: 10px;
-                            border: 1px solid #D0D3D6;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                            text-align: center;
-                            min-width: 130px;
-                        ">
-                            <strong>Desvio Padrão</strong><br>{dp}
+                        <div style="background-color: #E9ECEF; color: #212529; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Desvio Padrão:</strong> {dp}
                         </div>
-
-                        <div style="
-                            background-color: #F5F6F7;
-                            color: #222;
-                            padding: 14px;
-                            border-radius: 10px;
-                            border: 1px solid #D0D3D6;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                            text-align: center;
-                            min-width: 130px;
-                        ">
-                            <strong>Mínimo</strong><br>{min}
+                        <div style="background-color: #E9ECEF; color: #212529; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Mínimo:</strong> {min}
                         </div>
-
-                        <div style="
-                            background-color: #F5F6F7;
-                            color: #222;
-                            padding: 14px;
-                            border-radius: 10px;
-                            border: 1px solid #D0D3D6;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                            text-align: center;
-                            min-width: 130px;
-                        ">
-                            <strong>Máximo</strong><br>{max}
+                        <div style="background-color: #E9ECEF; color: #212529; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Máximo:</strong> {max}
                         </div>
                     </div>
                     """,
@@ -84,57 +45,18 @@ def visualizar_medidas(df, c):
             with col2:
                 st.markdown(
                     f"""
-                    <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-                        <div style="
-                            background-color: #F5F6F7;
-                            color: #222;
-                            padding: 14px;
-                            border-radius: 10px;
-                            border: 1px solid #D0D3D6;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                            text-align: center;
-                            min-width: 130px;
-                        ">
-                            <strong>1º Quartil</strong><br>{quartis.iloc[0]}
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <div style="background-color: #E9ECEF; color: #212529; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>1º Quartil:</strong> {quartis.iloc[0]}
                         </div>
-
-                        <div style="
-                            background-color: #F5F6F7;
-                            color: #222;
-                            padding: 14px;
-                            border-radius: 10px;
-                            border: 1px solid #D0D3D6;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                            text-align: center;
-                            min-width: 130px;
-                        ">
-                            <strong>Mediana</strong><br>{quartis.iloc[1]}
+                        <div style="background-color: #E9ECEF; color: #212529; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Mediana:</strong> {quartis.iloc[1]}
                         </div>
-
-                        <div style="
-                            background-color: #F5F6F7;
-                            color: #222;
-                            padding: 14px;
-                            border-radius: 10px;
-                            border: 1px solid #D0D3D6;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                            text-align: center;
-                            min-width: 130px;
-                        ">
-                            <strong>3º Quartil</strong><br>{quartis.iloc[2]}
+                        <div style="background-color: #E9ECEF; color: #212529; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>3º Quartil:</strong> {quartis.iloc[2]}
                         </div>
-
-                        <div style="
-                            background-color: #F5F6F7;
-                            color: #222;
-                            padding: 14px;
-                            border-radius: 10px;
-                            border: 1px solid #D0D3D6;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                            text-align: center;
-                            min-width: 130px;
-                        ">
-                            <strong>Faltantes</strong><br>{quant_nan}
+                        <div style="background-color: #E9ECEF; color: #212529; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Faltantes:</strong> {quant_nan}
                         </div>
                     </div>
                     """,
