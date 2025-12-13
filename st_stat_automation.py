@@ -88,7 +88,7 @@ st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("""
 <div class='description'>
 Carregue arquivos <strong>Excel</strong> ou <strong>CSV</strong>,
-e faça a análise do seus dados de forma simples e interativa - sem precisar escrever uma única linha de código!
+e faça a análise dos seus dados de forma simples e interativa - sem precisar escrever uma única linha de código!
 </div>
 """, unsafe_allow_html=True)
 
@@ -151,4 +151,5 @@ with st.container():
 
 if uploaded is not None:
     present_file(uploaded)
+
 
