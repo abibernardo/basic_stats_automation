@@ -79,7 +79,7 @@ Tratamento, exploração e análise do seu conjunto de dados!
 
 st.markdown("""
 <div class='author-box'>
-<strong>Desenvolvido por:</strong> Bernardo Almeida  
+<strong>Desenvolvido por:</strong> Bernardo Abib 
 </div>
 """, unsafe_allow_html=True)
 
@@ -151,5 +151,6 @@ with st.container():
 
 if uploaded is not None:
     present_file(uploaded)
+
 
 
