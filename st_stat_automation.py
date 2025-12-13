@@ -73,7 +73,7 @@ st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
 st.markdown("""
 <div class='subtitle'>
-Carregamento, exploração e análise estatística de bases de dados
+Tratamento, exploração e análise do seu conjunto de dados!
 </div>
 """, unsafe_allow_html=True)
 
@@ -87,9 +87,8 @@ st.markdown("<br><br>", unsafe_allow_html=True)
 
 st.markdown("""
 <div class='description'>
-Utilize esta aplicação para carregar arquivos <strong>Excel</strong> ou <strong>CSV</strong>,
-visualizar a estrutura dos dados e realizar análises estatísticas de forma simples
-e interativa.
+Carregue arquivos <strong>Excel</strong> ou <strong>CSV</strong>,
+e faça a análise do seus dados de forma simples e interativa - sem precisar escrever uma única linha de código!
 </div>
 """, unsafe_allow_html=True)
 
@@ -152,3 +151,4 @@ with st.container():
 
 if uploaded is not None:
     present_file(uploaded)
+
