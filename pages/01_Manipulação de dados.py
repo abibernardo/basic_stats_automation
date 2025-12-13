@@ -69,13 +69,6 @@ def manipulacao_dados():
 # ---------- APP ----------
 st.title("📊 App de Manipulação de Dados")
 
-uploaded = st.sidebar.file_uploader(
-    "📤 Envie seu dataset",
-    type=["xlsx", "xls", "csv"]
-)
-
-if uploaded is not None:
-    present_file(uploaded)
 
 if "df" in st.session_state:
     st.divider()
