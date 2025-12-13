@@ -215,7 +215,6 @@ def analise_descritiva(df):
     column_names = df.columns
     colunas = column_names.tolist()
     colunas.append('-')
-    st.write(f"## Análise Descritiva")
     col1, col2 = st.columns(2)
     with col1:
         option = st.selectbox(
