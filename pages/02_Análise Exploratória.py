@@ -19,7 +19,6 @@ def visualizar_medidas(df, c):
             # Calculando os quartis
             quartis = df[c].quantile([0.25, 0.5, 0.75]).round(3)
             quant_nan = st.session_state.df[c].isna().sum()
-            st.write(f"### {c}")
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown(
