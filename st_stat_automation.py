@@ -47,16 +47,17 @@ def present_file(uploaded_file):
     st.success(f"✅ Carregado: {filename} — {df.shape[0]} linhas × {df.shape[1]} colunas")
     return df
 
-# === Uso no Streamlit ===
 
 
 
-uploaded = st.sidebar.file_uploader(" ",
+
+uploaded = st.file_uploader(" ",
     type=["xlsx", "xls", "csv"])
 
 
 if uploaded is not None:
     present_file(uploaded)
+
 
 
 
