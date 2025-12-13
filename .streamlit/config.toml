@@ -1,9 +1,13 @@
-[global]
-
 [theme]
-base = "dark"  # Ativa o tema escuro
-primaryColor = "#008B8B"  # Cor principal para botões e links
-#backgroundColor = "#A9A9A9"  # Cor de fundo da aplicação
-secondaryBackgroundColor = "#008B8B"  # Cor de fundo da barra lateral
-textColor = "#FFFFFF"  # Cor do texto principal
-font = "sans serif"  # Opções: "sans serif", "serif", "monospace"
+base = "light"
+
+# Destaque moderno, profissional e com cor
+primaryColor = "#4A37E2"  # Azul-violeta moderno (ótimo para apps científicos)
+secondaryBackgroundColor = "#FFFFFF"  # Cards e sidebar mais limpos
+backgroundColor = "#F3F4F7"  # Fundo suave de dashboard
+
+# Forte contraste e boa leitura
+textColor = "#1A1A1A"
+
+# Estilo de fonte moderno
+font = "sans serif"
