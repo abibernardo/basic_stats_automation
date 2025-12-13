@@ -269,9 +269,12 @@ def analise_exploratoria(df):
         st.divider()
 
 
-
+st.title("📊 Análise Exploratória")
 
 if 'df' in st.session_state:
+    st.divider()
     analise_exploratoria(st.session_state.df)
+else:
+    st.info("Faça o upload de um dataset para começar.")
 
 
