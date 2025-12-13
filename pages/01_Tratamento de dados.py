@@ -67,7 +67,7 @@ def manipulacao_dados():
 
 
 # ---------- APP ----------
-st.title("📊 App de Manipulação de Dados")
+st.title("📊 Tratamento de Dados")
 
 
 if "df" in st.session_state:
