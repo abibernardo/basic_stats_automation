@@ -24,43 +24,123 @@ def visualizar_medidas(df, c):
             with col1:
                 st.markdown(
                     f"""
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                        <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
-                            <strong>Média:</strong> {media}
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                        <div style="
+                            background-color: #F5F6F7;
+                            color: #222;
+                            padding: 14px;
+                            border-radius: 10px;
+                            border: 1px solid #D0D3D6;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                            text-align: center;
+                            min-width: 130px;
+                        ">
+                            <strong>Média</strong><br>{media}
                         </div>
-                        <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
-                            <strong>Desvio Padrão:</strong> {dp}
+
+                        <div style="
+                            background-color: #F5F6F7;
+                            color: #222;
+                            padding: 14px;
+                            border-radius: 10px;
+                            border: 1px solid #D0D3D6;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                            text-align: center;
+                            min-width: 130px;
+                        ">
+                            <strong>Desvio Padrão</strong><br>{dp}
                         </div>
-                        <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
-                            <strong>Mínimo:</strong> {min}
+
+                        <div style="
+                            background-color: #F5F6F7;
+                            color: #222;
+                            padding: 14px;
+                            border-radius: 10px;
+                            border: 1px solid #D0D3D6;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                            text-align: center;
+                            min-width: 130px;
+                        ">
+                            <strong>Mínimo</strong><br>{min}
                         </div>
-                        <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
-                            <strong>Máximo:</strong> {max}
+
+                        <div style="
+                            background-color: #F5F6F7;
+                            color: #222;
+                            padding: 14px;
+                            border-radius: 10px;
+                            border: 1px solid #D0D3D6;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                            text-align: center;
+                            min-width: 130px;
+                        ">
+                            <strong>Máximo</strong><br>{max}
                         </div>
                     </div>
                     """,
                     unsafe_allow_html=True
                 )
+
             with col2:
                 st.markdown(
                     f"""
-                                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                    <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
-                                        <strong>1º Quartil:</strong> {quartis.iloc[0]}
-                                    </div>
-                                    <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
-                                        <strong>Mediana:</strong> {quartis.iloc[1]}
-                                    </div>
-                                    <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
-                                        <strong>3º Quartil:</strong> {quartis.iloc[2]}
-                                    </div>
-                                    <div style="background-color: #008B8B; color: black; padding: 10px; border-radius: 5px; text-align: center;">
-                                        <strong>Faltantes:</strong> {quant_nan}
-                                    </div>
-                                </div>
-                                """,
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                        <div style="
+                            background-color: #F5F6F7;
+                            color: #222;
+                            padding: 14px;
+                            border-radius: 10px;
+                            border: 1px solid #D0D3D6;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                            text-align: center;
+                            min-width: 130px;
+                        ">
+                            <strong>1º Quartil</strong><br>{quartis.iloc[0]}
+                        </div>
+
+                        <div style="
+                            background-color: #F5F6F7;
+                            color: #222;
+                            padding: 14px;
+                            border-radius: 10px;
+                            border: 1px solid #D0D3D6;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                            text-align: center;
+                            min-width: 130px;
+                        ">
+                            <strong>Mediana</strong><br>{quartis.iloc[1]}
+                        </div>
+
+                        <div style="
+                            background-color: #F5F6F7;
+                            color: #222;
+                            padding: 14px;
+                            border-radius: 10px;
+                            border: 1px solid #D0D3D6;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                            text-align: center;
+                            min-width: 130px;
+                        ">
+                            <strong>3º Quartil</strong><br>{quartis.iloc[2]}
+                        </div>
+
+                        <div style="
+                            background-color: #F5F6F7;
+                            color: #222;
+                            padding: 14px;
+                            border-radius: 10px;
+                            border: 1px solid #D0D3D6;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                            text-align: center;
+                            min-width: 130px;
+                        ">
+                            <strong>Faltantes</strong><br>{quant_nan}
+                        </div>
+                    </div>
+                    """,
                     unsafe_allow_html=True
                 )
+
             st.divider()
             fig = px.histogram(df, x=c)
             st.plotly_chart(fig)
@@ -276,5 +356,3 @@ if 'df' in st.session_state:
     analise_exploratoria(st.session_state.df)
 else:
     st.info("Faça o upload de um dataset para começar.")
-
-
