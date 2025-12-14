@@ -68,6 +68,11 @@ def manipulacao_dados():
 
 # ---------- APP ----------
 st.title("📊 Tratamento de Dados")
+st.markdown("""
+<div class='subtitle'>
+Transforme suas variáveis para o tipo adequado e tenha melhores visuais!
+</div>
+""", unsafe_allow_html=True)
 
 
 if "df" in st.session_state:
