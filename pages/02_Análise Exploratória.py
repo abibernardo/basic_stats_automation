@@ -88,42 +88,34 @@ def visualizar_medidas(df, c):
 
 @st.fragment
 def visualizar_relacoes(df, x, y, cor, tamanho):
-    if x not in '-' and y not in '-':
-        if cor in '-' and tamanho in '-':
-            st.scatter_chart(df, x=x, y=y)
-        if cor not in '-' and tamanho in '-':
-            fig = px.scatter(
-                df,
-                x=x,
-                y=y,
-                color=cor,
-                color_continuous_scale="reds",
-            )
-            if fig:
-                st.plotly_chart(fig, theme="streamlit", use_container_width=True)
-        if cor in '-' and tamanho not in '-':
-            fig = px.scatter(
-                df,
-                x=x,
-                y=y,
-                size=tamanho,
-                hover_data=None,
-            )
-            if fig:
-                st.plotly_chart(fig, key="ia", on_select="rerun")
-        if cor not in '-' and tamanho not in '-':
-            fig = px.scatter(
-                df,
-                x=x,
-                y=y,
-                color=cor,
-                size=tamanho,
-                hover_data=None,
-            )
-            if fig:
-                st.plotly_chart(fig, key="iis", on_select="rerun")
-    else:
+    if x == "-" or y == "-":
         st.write("Selecione as variáveis de interesse.")
+        return
+
+    params = {
+        "data_frame": df,
+        "x": x,
+        "y": y,
+        "hover_data": None,
+    }
+
+    if cor != "-":
+        params["color"] = cor
+        params["color_continuous_scale"] = "reds"
+
+    if tamanho != "-":
+        params["size"] = tamanho
+
+    fig = px.scatter(**params)
+
+    st.plotly_chart(
+        fig,
+        theme="streamlit",
+        use_container_width=True,
+        key="scatter_plot",
+        on_select="rerun"
+    )
+
 
 @st.fragment
 def barras(df, colunas_categoricas, colunas_numericas):
