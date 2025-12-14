@@ -237,9 +237,8 @@ def analise_exploratoria(df):
             x = st.selectbox('eixo x', colunas_numericas)
             y = st.selectbox('eixo y', colunas_numericas)
         with col25:
-            cor = st.selectbox('Divisão por cor', colunas, index = default_ix3)
-            tamanho = st.selectbox('Divisão por tamanho', colunas_numericas, index = default_ix)
-            st.write("**Para deixar um campo vazio, selecione ' - '**")
+            cor = st.selectbox('Divisão por cor (opcional)', colunas, index = default_ix3)
+            tamanho = st.selectbox('Divisão por tamanho (opcional)', colunas_numericas, index = default_ix)
         visualizar_relacoes(df, x, y, cor, tamanho)
         st.divider()
     if grafico == "Boxplot":
@@ -253,8 +252,7 @@ def analise_exploratoria(df):
         with col9:
             variaveis_corr = st.multiselect('Variáveis de interesse', colunas_numericas)
         with col99:
-            cor_pp = st.selectbox('divisão por cor', colunas_categoricas, index=default_ix2)
-            st.write("**Para deixar o campo vazio, selecione ' - '**")
+            cor_pp = st.selectbox('divisão por cor (opcional)', colunas_categoricas, index=default_ix2)
         if st.button('Gerar!'):
             if '-' not in variaveis_corr:
                 pairplor(df, variaveis_corr, cor_pp)
