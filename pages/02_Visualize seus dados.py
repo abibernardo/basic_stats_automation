@@ -86,7 +86,7 @@ def visualizar_medidas(df, c):
     except Exception as ex:
         st.write("Ops, houve algum erro. Verifique a formatação da sua planilha")
 
-@st.fragment
+
 def visualizar_relacoes(df, x, y, cor, tamanho):
     if x == "-" or y == "-":
         st.write("Selecione as variáveis de interesse.")
@@ -117,7 +117,6 @@ def visualizar_relacoes(df, x, y, cor, tamanho):
     )
 
 
-@st.fragment
 def barras(df, colunas_categoricas, colunas_numericas):
     col11, col22 = st.columns(2)
     with col11:
@@ -142,7 +141,6 @@ def barras(df, colunas_categoricas, colunas_numericas):
 
 
 
-@st.fragment
 def boxplots(df, colunas_categoricas, colunas_numericas):
     col11, col22 = st.columns(2)
     with col11:
@@ -160,7 +158,6 @@ def boxplots(df, colunas_categoricas, colunas_numericas):
             fig.update_traces(quartilemethod="linear")
             st.plotly_chart(fig)
 
-@st.fragment
 def linhas(df, colunas_categoricas, colunas_numericas):
     col11, col22 = st.columns(2)
     with col11:
@@ -183,7 +180,6 @@ def linhas(df, colunas_categoricas, colunas_numericas):
         st.plotly_chart(fig)
 
 
-@st.fragment
 def pairplor(df, variaveis_corr, cor_pp):
     df_numeric = df[variaveis_corr]
     corr = df_numeric.corr()
@@ -213,7 +209,7 @@ def analise_descritiva(df):
             column_names, key='descritiva')
     visualizar_medidas(df, option)
 
-# @st.fragment
+
 def analise_exploratoria(df):
     column_names = df.columns
     colunas = column_names.tolist()
