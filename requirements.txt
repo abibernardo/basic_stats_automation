@@ -19,3 +19,5 @@ scikit-learn
 
 # Interface com o usuário
 streamlit
+altair==4.2.2
+
